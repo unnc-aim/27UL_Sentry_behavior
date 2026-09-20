@@ -82,7 +82,7 @@ SentryBehaviorServer::SentryBehaviorServer(const rclcpp::NodeOptions & options)
   subscribe<dji_referee_protocol::msg::SelfColor>(
     "/referee/parsed/common/self_color", "referee_selfColor");
 
-  // DamageState: custom callback with latch (visible for exactly one BT tick)
+  // Store the latest DamageState until the post-tick reset.
   auto damage_sub = node()->create_subscription<dji_referee_protocol::msg::DamageState>(
     "/referee/common/damage_state", rclcpp::QoS(10),
     [this](const dji_referee_protocol::msg::DamageState::SharedPtr msg) {
@@ -125,7 +125,7 @@ void SentryBehaviorServer::onTreeCreated(BT::Tree & tree)
 std::optional<BT::NodeStatus> SentryBehaviorServer::onLoopAfterTick(BT::NodeStatus /*status*/)
 {
   ++tick_count_;
-  // Clear damage latch: damage was visible for one BT tick, now reset
+  // Clear the pending DamageState after each tree tick.
   {
     std::lock_guard<std::mutex> lock(damage_mutex_);
     if (damage_on_bb_) {

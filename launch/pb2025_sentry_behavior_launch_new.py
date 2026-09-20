@@ -50,8 +50,8 @@ def generate_launch_description():
     )
     declare_params_file_cmd = DeclareLaunchArgument(
         "params_file",
-        default_value=os.path.join(bringup_dir, "params", "sentry_behavior.yaml"),
-        description="ROS 2 parameters file; target_tree will be chosen here later",
+        default_value=os.path.join(bringup_dir, "params", "sentry_behavior_phase1.yaml"),
+        description="ROS 2 parameters file; target_tree is set here (competition_phase1)",
     )
     declare_log_level_cmd = DeclareLaunchArgument(
         "log_level", default_value="info", description="Log level"

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="competition_phase1">
+
+  <!-- ============ INIT: readiness gates ============ -->
+  <BehaviorTree ID="phase1_init">
+    <Sequence>
+      <IsMapReady topic_name="/map"
+                  settle_time="5.0"
+                  timeout="120.0"/>
+      <IsTfReady map_frame="map"
+                 base_frame="base_footprint"
+                 timeout="120.0"/>
+      <IsNav2Ready action_name="navigate_to_pose"
+                   timeout="30.0"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============ WAIT_GAME: hold outputs, wait for IN_GAME ============ -->
+  <!-- While game_progress != 4 the Fallback runs the ForceFailure branch:
+       it publishes the holding commands and returns FAILURE, so the tree
+       loops and republishes every tick until the referee starts the game. -->
+  <BehaviorTree ID="phase1_wait_game">
+    <Fallback>
+      <IsGameStatus name="IsGameStart"
+                    max_remain_time="420"
+                    min_remain_time="0"
+                    expected_game_progress="4"
+                    key_port="{@referee_gameStatus}"/>
+      <ForceFailure>
+        <Sequence>
+          <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                                 gimbal_vel_pitch="0.0"
+                                 yaw_min="-3.14159"
+                                 yaw_max="3.14159"
+                                 pitch_min="-0.3"
+                                 pitch_max="0.3"
+                                 duration="0"
+                                 topic_name="gimbal_scan_cmd"/>
+          <PublishAutoAim value="0"
+                          duration="0"
+                          topic_name="auto_aim_switch"/>
+          <PublishSpinSpeed spin_speed="0.0"
+                            duration="0"
+                            topic_name="cmd_spin"/>
+          <PublishTwist v_x="0.0"
+                        v_y="0.0"
+                        v_yaw="0.0"
+                        duration="0"
+                        topic_name="cmd_vel"/>
+        </Sequence>
+      </ForceFailure>
+    </Fallback>
+  </BehaviorTree>
+
+  <!-- ============ NAVIGATE: forward waypoints ============ -->
+  <BehaviorTree ID="phase1_navigate_forward">
+    <Sequence>
+      <SendNav2Goal goal="6.0;0.0;0.0"
+                    action_name="navigate_to_pose"/>
+      <SendNav2Goal goal="6.0;5.25;0.0"
+                    action_name="navigate_to_pose"/>
+      <SendNav2Goal goal="3.0;5.25;0.0"
+                    action_name="navigate_to_pose"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="phase1_navigate">
+    <Parallel success_count="1"
+              failure_count="1">
+      <RetryUntilSuccessful num_attempts="-1">
+        <SubTree ID="phase1_navigate_forward"/>
+      </RetryUntilSuccessful>
+
+      <ReactiveSequence>
+        <IsGameStatus name="IsGameRunning"
+                      max_remain_time="420"
+                      min_remain_time="0"
+                      expected_game_progress="4"
+                      key_port="{@referee_gameStatus}"/>
+        <KeepRunningUntilFailure>
+          <Sequence>
+            <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                                   gimbal_vel_pitch="0.0"
+                                   yaw_min="-3.14159"
+                                   yaw_max="3.14159"
+                                   pitch_min="-0.3"
+                                   pitch_max="0.3"
+                                   duration="0"
+                                   topic_name="gimbal_scan_cmd"/>
+            <PublishAutoAim value="0"
+                            duration="0"
+                            topic_name="auto_aim_switch"/>
+            <PublishSpinSpeed spin_speed="0.0"
+                              duration="0"
+                              topic_name="cmd_spin"/>
+          </Sequence>
+        </KeepRunningUntilFailure>
+      </ReactiveSequence>
+    </Parallel>
+  </BehaviorTree>
+
+  <!-- ============ Main tree: INIT -> WAIT_GAME -> NAVIGATE ============ -->
+  <BehaviorTree ID="competition_phase1">
+    <KeepRunningUntilFailure>
+      <ForceSuccess>
+        <ReactiveSequence>
+          <SubTree ID="phase1_init"/>
+          <SubTree ID="phase1_wait_game"/>
+          <SubTree ID="phase1_navigate"/>
+        </ReactiveSequence>
+      </ForceSuccess>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Condition ID="IsMapReady">
+      <input_port name="topic_name"
+                  default="/map"
+                  type="std::string">Latched OccupancyGrid topic to wait for</input_port>
+      <input_port name="settle_time"
+                  default="5.0"
+                  type="double">Seconds to keep waiting after the first map</input_port>
+      <input_port name="timeout"
+                  default="120.0"
+                  type="double">Seconds before the missing map is logged as an error</input_port>
+    </Condition>
+    <Condition ID="IsTfReady">
+      <input_port name="map_frame"
+                  default="map"
+                  type="std::string">Parent frame of the localization lookup</input_port>
+      <input_port name="base_frame"
+                  default="base_footprint"
+                  type="std::string">Robot base frame</input_port>
+      <input_port name="timeout"
+                  default="120.0"
+                  type="double">Seconds before the missing transform is logged</input_port>
+    </Condition>
+    <Condition ID="IsNav2Ready">
+      <input_port name="action_name"
+                  default="navigate_to_pose"
+                  type="std::string">Action server name to wait for</input_port>
+      <input_port name="timeout"
+                  default="30.0"
+                  type="double">Seconds before the missing server is logged</input_port>
+    </Condition>
+  </TreeNodesModel>
+
+</root>
