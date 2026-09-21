@@ -55,12 +55,18 @@
   <!-- ============ NAVIGATE: forward waypoints ============ -->
   <BehaviorTree ID="phase1_navigate_forward">
     <Sequence>
-      <SendNav2Goal goal="6.0;0.0;0.0"
-                    action_name="navigate_to_pose"/>
-      <SendNav2Goal goal="6.0;5.25;0.0"
-                    action_name="navigate_to_pose"/>
-      <SendNav2Goal goal="3.0;5.25;0.0"
-                    action_name="navigate_to_pose"/>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="6.0;0.0;0.0"
+                      action_name="navigate_to_pose"/>
+      </Timeout>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="6.0;5.25;0.0"
+                      action_name="navigate_to_pose"/>
+      </Timeout>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="3.0;5.25;0.0"
+                      action_name="navigate_to_pose"/>
+      </Timeout>
     </Sequence>
   </BehaviorTree>
 
@@ -68,7 +74,19 @@
     <Parallel success_count="1"
               failure_count="1">
       <RetryUntilSuccessful num_attempts="-1">
-        <SubTree ID="phase1_navigate_forward"/>
+        <Fallback>
+          <SubTree ID="phase1_navigate_forward"/>
+          <ForceFailure>
+            <Sequence>
+              <PublishTwist v_x="0.0"
+                            v_y="0.0"
+                            v_yaw="0.0"
+                            duration="0"
+                            topic_name="cmd_vel"/>
+              <Sleep msec="2000"/>
+            </Sequence>
+          </ForceFailure>
+        </Fallback>
       </RetryUntilSuccessful>
 
       <ReactiveSequence>
