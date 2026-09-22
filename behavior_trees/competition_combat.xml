@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <!-- Caller supplies the game/manual gate; low HP is the only normal exit. -->
+  <BehaviorTree ID="competition_combat_active">
+    <Sequence>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <PublishSpinSpeed spin_speed="7.0" duration="0" topic_name="cmd_spin"/>
+      <PublishGimbalVelocity gimbal_vel_yaw="1.0" gimbal_vel_pitch="0"
+                             yaw_min="-3.14159" yaw_max="3.14159"
+                             pitch_min="-0.3" pitch_max="0.3"
+                             duration="0" topic_name="gimbal_scan_cmd"/>
+      <PublishAutoAim value="1" duration="0" topic_name="auto_aim_switch"/>
+      <Parallel success_count="1" failure_count="1">
+        <!-- Tick the latch before its consumer; halt clears only the blackboard. -->
+        <TrackHeat stop_heat="240" resume_heat="50" aim_allowed="{aim_allowed}"/>
+        <ReactiveFallback>
+          <Sequence>
+            <IsHpLow threshold="150"/>
+            <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+          </Sequence>
+          <ReactiveSequence>
+            <Inverter><IsHpLow threshold="150"/></Inverter>
+            <KeepRunningUntilFailure>
+              <Sequence>
+                <PublishSpinSpeed spin_speed="7.0" duration="0" topic_name="cmd_spin"/>
+                <PublishGimbalVelocity gimbal_vel_yaw="1.0" gimbal_vel_pitch="0"
+                                       yaw_min="-3.14159" yaw_max="3.14159"
+                                       pitch_min="-0.3" pitch_max="0.3"
+                                       duration="0" topic_name="gimbal_scan_cmd"/>
+                <PublishAutoAim value="{aim_allowed}" duration="0" topic_name="auto_aim_switch"/>
+              </Sequence>
+            </KeepRunningUntilFailure>
+          </ReactiveSequence>
+        </ReactiveFallback>
+      </Parallel>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="competition_combat">
+    <Fallback>
+      <ReactiveSequence>
+        <!-- Full uint16 time range preserves Python's progress-only game check. -->
+        <IsGameStatus expected_game_progress="4" min_remain_time="0" max_remain_time="65535"/>
+        <SubTree ID="competition_combat_active"/>
+      </ReactiveSequence>
+      <ForceFailure>
+        <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+      </ForceFailure>
+    </Fallback>
+  </BehaviorTree>
+</root>

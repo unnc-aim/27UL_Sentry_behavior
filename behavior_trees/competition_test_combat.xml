@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="competition_test_combat">
+  <BehaviorTree ID="competition_test_combat_stop">
+    <Sequence>
+      <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+      <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+      <PublishGimbalVelocity gimbal_vel_yaw="0" gimbal_vel_pitch="0"
+                             yaw_min="-3.14159" yaw_max="3.14159"
+                             pitch_min="-0.3" pitch_max="0.3"
+                             duration="0" topic_name="gimbal_scan_cmd"/>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="competition_test_combat">
+    <Sequence>
+      <!-- Sleep prevents a synchronous infinite retry while awaiting manual start. -->
+      <RetryUntilSuccessful num_attempts="-1">
+        <Sequence>
+          <Sleep msec="200"/>
+          <IsManualStart start_value="1"/>
+        </Sequence>
+      </RetryUntilSuccessful>
+      <Fallback>
+        <Sequence>
+          <ReactiveSequence>
+            <IsManualStart start_value="1"/>
+            <Parallel success_count="1" failure_count="1">
+              <SubTree ID="competition_combat_active"/>
+              <Repeat num_cycles="-1">
+                <Sequence>
+                  <PrintRefereeStatus/>
+                  <Sleep msec="1000"/>
+                </Sequence>
+              </Repeat>
+            </Parallel>
+          </ReactiveSequence>
+          <SubTree ID="competition_test_combat_stop"/>
+        </Sequence>
+        <ForceFailure>
+          <SubTree ID="competition_test_combat_stop"/>
+        </ForceFailure>
+      </Fallback>
+    </Sequence>
+  </BehaviorTree>
+</root>

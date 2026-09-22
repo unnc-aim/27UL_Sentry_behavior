@@ -125,6 +125,13 @@ if(BUILD_TESTING)
   ament_auto_add_executable(test_competition_conditions test/test_competition_conditions.cpp)
   add_test(NAME competition_conditions
     COMMAND test_competition_conditions $<TARGET_FILE:competition_conditions>)
+  ament_auto_add_executable(test_competition_combat test/test_competition_combat.cpp)
+  add_test(NAME competition_combat
+    COMMAND test_competition_combat
+      $<TARGET_FILE:competition_conditions> $<TARGET_FILE:is_game_status>
+      $<TARGET_FILE:is_manual_start>
+      ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_combat.xml
+      ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_test_combat.xml)
   set(ament_cmake_clang_format_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-format")
   find_package(ament_lint_auto REQUIRED)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE
