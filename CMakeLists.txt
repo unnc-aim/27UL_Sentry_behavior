@@ -45,6 +45,9 @@ list(APPEND plugin_libs is_rfid_detected)
 ament_auto_add_library(is_status_ok SHARED plugins/condition/is_status_ok.cpp)
 list(APPEND plugin_libs is_status_ok)
 
+ament_auto_add_library(competition_conditions SHARED plugins/condition/competition_conditions.cpp)
+list(APPEND plugin_libs competition_conditions)
+
 ament_auto_add_library(is_attacked SHARED plugins/condition/is_attacked.cpp)
 list(APPEND plugin_libs is_attacked)
 
@@ -118,6 +121,10 @@ endforeach()
 #############
 
 if(BUILD_TESTING)
+  enable_testing()
+  ament_auto_add_executable(test_competition_conditions test/test_competition_conditions.cpp)
+  add_test(NAME competition_conditions
+    COMMAND test_competition_conditions $<TARGET_FILE:competition_conditions>)
   set(ament_cmake_clang_format_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-format")
   find_package(ament_lint_auto REQUIRED)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE

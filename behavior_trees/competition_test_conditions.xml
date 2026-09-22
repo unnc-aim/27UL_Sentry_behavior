@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="competition_test_conditions">
+  <BehaviorTree ID="competition_test_conditions">
+    <KeepRunningUntilFailure>
+      <ForceSuccess>
+        <ReactiveSequence>
+          <IsManualStart start_value="1"/>
+          <Parallel success_count="-1" failure_count="1">
+            <!-- Keep this child RUNNING so the latch survives subsequent ticks. -->
+            <TrackHeat stop_heat="240" resume_heat="50" aim_allowed="{aim_allowed}"/>
+            <Repeat num_cycles="-1">
+              <Sequence>
+                <ForceSuccess>
+                  <IsHpLow threshold="150" hp_low="{hp_low}"/>
+                </ForceSuccess>
+                <PrintRefereeStatus/>
+                <Sleep msec="1000"/>
+              </Sequence>
+            </Repeat>
+          </Parallel>
+        </ReactiveSequence>
+      </ForceSuccess>
+    </KeepRunningUntilFailure>
+  </BehaviorTree>
+</root>
