@@ -78,16 +78,26 @@ int main(int argc, char ** argv)
     BT::BehaviorTreeFactory factory;
     factory.registerFromPlugin(argv[1]);
     factory.registerFromPlugin(argv[2]);
-    factory.registerSimpleCondition("IsMapReady", [](BT::TreeNode &) {
-      return BT::NodeStatus::SUCCESS;
+    int map_failures = 0;
+    int tf_failures = 0;
+    int nav2_failures = 0;
+    auto ready_after = [](int & failures) {
+        if (failures > 0) {
+          --failures;
+          return BT::NodeStatus::FAILURE;
+        }
+        return BT::NodeStatus::SUCCESS;
+      };
+    factory.registerSimpleCondition("IsMapReady", [&](BT::TreeNode &) {
+      return ready_after(map_failures);
     }, {BT::InputPort<std::string>("topic_name"), BT::InputPort<double>("settle_time"),
       BT::InputPort<double>("timeout")});
-    factory.registerSimpleCondition("IsTfReady", [](BT::TreeNode &) {
-      return BT::NodeStatus::SUCCESS;
+    factory.registerSimpleCondition("IsTfReady", [&](BT::TreeNode &) {
+      return ready_after(tf_failures);
     }, {BT::InputPort<std::string>("map_frame"), BT::InputPort<std::string>("base_frame"),
       BT::InputPort<double>("timeout")});
-    factory.registerSimpleCondition("IsNav2Ready", [](BT::TreeNode &) {
-      return BT::NodeStatus::SUCCESS;
+    factory.registerSimpleCondition("IsNav2Ready", [&](BT::TreeNode &) {
+      return ready_after(nav2_failures);
     }, {BT::InputPort<std::string>("action_name"), BT::InputPort<double>("timeout")});
     factory.registerNodeType<TestNav>("SendNav2Goal");
 
@@ -160,6 +170,22 @@ int main(int argc, char ** argv)
         require(last("auto_aim_switch") == 0 && last("cmd_spin") == 0 &&
           last("gimbal_scan_cmd") == 0 && last("cmd_vel") == 0, "Root safe stop");
       };
+
+    reset();
+    set_game(0);
+    set_hp(400);
+    map_failures = tf_failures = nav2_failures = 1;
+    auto init_tree = factory.createTree("competition_phase1", local);
+    for (int i = 0; i < 3; ++i) {
+      require(init_tree.tickExactlyOnce() == BT::NodeStatus::RUNNING,
+        "INIT remains RUNNING while a readiness gate fails");
+      require(outputs.empty(), "INIT failure must not trigger root safe stop or WAIT_GAME");
+      std::this_thread::sleep_for(std::chrono::milliseconds(600));
+    }
+    require(init_tree.tickExactlyOnce() == BT::NodeStatus::RUNNING,
+      "INIT proceeds to WAIT_GAME after all gates become ready");
+    require(map_failures == 0 && tf_failures == 0 && nav2_failures == 0 &&
+      !outputs.empty() && TestNav::goals.empty(), "All readiness gates must be polled");
 
     reset();
     set_game(0);

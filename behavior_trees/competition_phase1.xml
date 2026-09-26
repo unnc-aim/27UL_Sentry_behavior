@@ -42,6 +42,7 @@
           </Sequence>
         </KeepRunningUntilFailure>
       </ReactiveFallback>
+      <IsTfReady map_frame="map" base_frame="base_footprint" timeout="120.0"/>
     </Sequence>
   </BehaviorTree>
 
@@ -137,7 +138,12 @@
   <BehaviorTree ID="competition_phase1">
     <Fallback>
       <Sequence>
-          <SubTree ID="phase1_init"/>
+          <RetryUntilSuccessful num_attempts="-1">
+            <Fallback>
+              <SubTree ID="phase1_init"/>
+              <ForceFailure><Sleep msec="500"/></ForceFailure>
+            </Fallback>
+          </RetryUntilSuccessful>
           <SubTree ID="phase1_wait_game"/>
           <ReactiveSequence>
             <IsGameStatus expected_game_progress="4" min_remain_time="0" max_remain_time="65535"/>
