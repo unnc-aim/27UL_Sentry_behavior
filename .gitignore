@@ -1,2 +1,6 @@
 ISSUES.md
 MIGRATION_PLAN.md
+PHASE7_REVIEW_PLAN.md
+test/
+behavior_trees/competition_test_*.xml
+params/sentry_behavior_*_test.yaml
