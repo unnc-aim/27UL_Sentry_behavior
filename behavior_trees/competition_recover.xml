@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="competition_recover_active">
+    <Sequence>
+      <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+      <PublishSpinSpeed spin_speed="7.0" duration="0" topic_name="cmd_spin"/>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                             yaw_min="-3.14159" yaw_max="3.14159"
+                             pitch_min="-0.3" pitch_max="0.3"
+                             duration="0" topic_name="gimbal_scan_cmd"/>
+      <Parallel success_count="1" failure_count="1">
+        <Inverter>
+          <KeepRunningUntilFailure>
+            <IsHpLow threshold="399" hp_low="{recover_hp_low}"/>
+          </KeepRunningUntilFailure>
+        </Inverter>
+        <KeepRunningUntilFailure>
+          <Sequence>
+            <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+            <PublishSpinSpeed spin_speed="7.0" duration="0" topic_name="cmd_spin"/>
+            <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                                   yaw_min="-3.14159" yaw_max="3.14159"
+                                   pitch_min="-0.3" pitch_max="0.3"
+                                   duration="0" topic_name="gimbal_scan_cmd"/>
+          </Sequence>
+        </KeepRunningUntilFailure>
+      </Parallel>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="competition_recover">
+    <ReactiveSequence>
+      <IsGameStatus expected_game_progress="4" min_remain_time="0" max_remain_time="65535"/>
+      <SubTree ID="competition_recover_active"/>
+    </ReactiveSequence>
+  </BehaviorTree>
+</root>
