@@ -115,3 +115,50 @@ ros2 topic pub -r 5 /referee/common/game_status dji_referee_protocol/msg/GameSta
 已收到消息后重新发送 ExecuteTree 请求。正式子树此时没有后续根部停车分支，
 此检查只用于隔离的接口测试。Control+C/action cancel 触发的外部 halt 不经过
 XML 正常退出分支，输出归零仍属于计划中后续可靠性检查。
+
+## 第三批 RETREAT 验证
+
+`competition_retreat` 是正式撤退子树。只在比赛进行中工作：依次导航
+`(6.0,5.25,0)`、`(6.0,0,0)`、`(0,0,0)`，每个目标有 60s Timeout。
+每个成功航点后发送一次零 Twist；全部到达后再发一次并返回 SUCCESS。
+导航失败时检查 HP，若 HP<=0，发零 Twist 后返回 SUCCESS，交给后续 RECOVER；
+否则发一次零 Twist，等待 2s，再从第一航点重试。比赛 gate 每 tick 检查，
+比赛结束时取消正在运行的目标或退避并返回 FAILURE，不开始下一次重试。
+HP 缺少消息时沿用 Python 初值 400；比赛 gate 采用 `game_progress=4` 和
+0～65535 全时域，保留 BT-012 对第一阶段时间窗不一致的后续跟踪。
+
+进入阶段时发送自瞄 0、spin 0、云台扫描 0.5，随后在导航和 2s 退避期间
+按 5Hz tick 持续重发三种输出；零 Twist 只在航点成功、导航失败或 HP=0
+分支各自指定位置发送。一次成功进基地后的额外零 Twist 复刻 Python 的
+`_ph_retreat()`；导航目标拒绝/失败时 Python 可能在 `_navigate_to()` 和阶段
+处理函数各停车一次，当前 XML 只在退避分支发一次，详见 BT-015。
+
+在已 source ROS 2 和依赖工作空间的环境运行：
+
+```bash
+colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
+colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_retreat$' --output-on-failure
+colcon test-result --verbose
+```
+
+CTest 加载实际正式/调试 XML 及 HP、比赛、手动条件插件，以记录型 Nav2 动作
+模拟成功、失败和长时间 RUNNING，并检查四种出口。它不替代真实 Nav2
+取消确认、60s 时钟和 ROS topic 频率测试。
+
+独立调试入口 `competition_test_retreat` 用 `/manual_start=1` 触发，不依赖
+GameStatus；HP=0 仍需等当前导航失败后才进入 RECOVER。可在隔离
+ROS_DOMAIN_ID 的仿真环境用以下 params 运行并观察 `/cmd_spin`、
+`/gimbal_scan_cmd`、`/auto_aim_switch`、`/cmd_vel_nav2_result`：
+
+```bash
+ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix pb2025_sentry_behavior)/share/pb2025_sentry_behavior/params/sentry_behavior_retreat_test.yaml"
+ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 400}'
+ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
+ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 0}'
+```
+
+前两条消息应在启动目标前发送；最后一条用于手动停止。调试树成功到达、
+HP=0 撤退失败或手动停止时，都发布全零停止输出后结束本轮；它不会自动进入
+RECOVER，也不会自动重启。真实目标由 Nav2 接收，因此只在仿真或安全隔离的
+台架运行。正式 `competition_retreat` 的比赛结束 FAILURE 出口等待第 6 批
+根部安全收口完成，其余输出归零按 BT-013 跟踪。

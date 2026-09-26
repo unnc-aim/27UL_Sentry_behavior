@@ -1,0 +1,17 @@
+pb2025_sentry_behavior_server:
+  ros__parameters:
+    use_sim_time: false
+    action_name: pb2025_sentry_behavior
+    tick_frequency: 5
+    groot2_port: 0
+    ros_plugins_timeout: 1000
+    use_cout_logger: true
+    plugins:
+      - pb2025_sentry_behavior/bt_plugins
+    behavior_trees:
+      - pb2025_sentry_behavior/behavior_trees
+
+pb2025_sentry_behavior_client:
+  ros__parameters:
+    use_sim_time: false
+    target_tree: competition_test_retreat

@@ -132,6 +132,13 @@ if(BUILD_TESTING)
       $<TARGET_FILE:is_manual_start>
       ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_combat.xml
       ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_test_combat.xml)
+  ament_auto_add_executable(test_competition_retreat test/test_competition_retreat.cpp)
+  add_test(NAME competition_retreat
+    COMMAND test_competition_retreat
+      $<TARGET_FILE:competition_conditions> $<TARGET_FILE:is_game_status>
+      $<TARGET_FILE:is_manual_start>
+      ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_retreat.xml
+      ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_test_retreat.xml)
   set(ament_cmake_clang_format_CONFIG_FILE "${CMAKE_SOURCE_DIR}/.clang-format")
   find_package(ament_lint_auto REQUIRED)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE
