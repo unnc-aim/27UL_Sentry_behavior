@@ -16,118 +16,148 @@
   </BehaviorTree>
 
   <!-- ============ WAIT_GAME: hold outputs, wait for IN_GAME ============ -->
-  <!-- While game_progress != 4 the Fallback runs the ForceFailure branch:
-       it publishes the holding commands and returns FAILURE, so the tree
-       loops and republishes every tick until the referee starts the game. -->
   <BehaviorTree ID="phase1_wait_game">
-    <Fallback>
-      <IsGameStatus name="IsGameStart"
-                    max_remain_time="420"
-                    min_remain_time="0"
-                    expected_game_progress="4"
-                    key_port="{@referee_gameStatus}"/>
-      <ForceFailure>
-        <Sequence>
-          <PublishGimbalVelocity gimbal_vel_yaw="0.5"
-                                 gimbal_vel_pitch="0.0"
-                                 yaw_min="-3.14159"
-                                 yaw_max="3.14159"
-                                 pitch_min="-0.3"
-                                 pitch_max="0.3"
-                                 duration="0"
-                                 topic_name="gimbal_scan_cmd"/>
-          <PublishAutoAim value="0"
-                          duration="0"
-                          topic_name="auto_aim_switch"/>
-          <PublishSpinSpeed spin_speed="0.0"
-                            duration="0"
-                            topic_name="cmd_spin"/>
-          <PublishTwist v_x="0.0"
-                        v_y="0.0"
-                        v_yaw="0.0"
-                        duration="0"
-                        topic_name="cmd_vel"/>
-        </Sequence>
-      </ForceFailure>
-    </Fallback>
-  </BehaviorTree>
-
-  <!-- ============ NAVIGATE: forward waypoints ============ -->
-  <BehaviorTree ID="phase1_navigate_forward">
     <Sequence>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="6.0;0.0;0.0"
-                      action_name="navigate_to_pose"/>
-      </Timeout>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="6.0;5.25;0.0"
-                      action_name="navigate_to_pose"/>
-      </Timeout>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="3.0;5.25;0.0"
-                      action_name="navigate_to_pose"/>
-      </Timeout>
-    </Sequence>
-  </BehaviorTree>
-
-  <BehaviorTree ID="phase1_navigate">
-    <Parallel success_count="1"
-              failure_count="1">
-      <RetryUntilSuccessful num_attempts="-1">
-        <Fallback>
-          <SubTree ID="phase1_navigate_forward"/>
-          <ForceFailure>
-            <Sequence>
-              <PublishTwist v_x="0.0"
-                            v_y="0.0"
-                            v_yaw="0.0"
-                            duration="0"
-                            topic_name="cmd_vel"/>
-              <Sleep msec="2000"/>
-            </Sequence>
-          </ForceFailure>
-        </Fallback>
-      </RetryUntilSuccessful>
-
-      <ReactiveSequence>
-        <IsGameStatus name="IsGameRunning"
-                      max_remain_time="420"
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                             yaw_min="-3.14159" yaw_max="3.14159"
+                             pitch_min="-0.3" pitch_max="0.3"
+                             duration="0" topic_name="gimbal_scan_cmd"/>
+      <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+      <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <ReactiveFallback>
+        <IsGameStatus name="IsGameStart"
+                      max_remain_time="65535"
                       min_remain_time="0"
                       expected_game_progress="4"
                       key_port="{@referee_gameStatus}"/>
         <KeepRunningUntilFailure>
           <Sequence>
-            <PublishGimbalVelocity gimbal_vel_yaw="0.5"
-                                   gimbal_vel_pitch="0.0"
-                                   yaw_min="-3.14159"
-                                   yaw_max="3.14159"
-                                   pitch_min="-0.3"
-                                   pitch_max="0.3"
-                                   duration="0"
-                                   topic_name="gimbal_scan_cmd"/>
-            <PublishAutoAim value="0"
-                            duration="0"
-                            topic_name="auto_aim_switch"/>
-            <PublishSpinSpeed spin_speed="0.0"
-                              duration="0"
-                              topic_name="cmd_spin"/>
+            <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                                   yaw_min="-3.14159" yaw_max="3.14159"
+                                   pitch_min="-0.3" pitch_max="0.3"
+                                   duration="0" topic_name="gimbal_scan_cmd"/>
+            <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+            <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
           </Sequence>
         </KeepRunningUntilFailure>
-      </ReactiveSequence>
-    </Parallel>
+      </ReactiveFallback>
+    </Sequence>
   </BehaviorTree>
 
-  <!-- ============ Main tree: INIT -> WAIT_GAME -> NAVIGATE ============ -->
-  <BehaviorTree ID="competition_phase1">
-    <KeepRunningUntilFailure>
-      <ForceSuccess>
+  <!-- ============ NAVIGATE: forward waypoints ============ -->
+  <BehaviorTree ID="phase1_navigate_forward">
+    <Sequence>
+      <Inverter><IsHpLow threshold="150"/></Inverter>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="6.0;0.0;0.0"
+                      action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Inverter><IsHpLow threshold="150"/></Inverter>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="6.0;5.25;0.0"
+                      action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Inverter><IsHpLow threshold="150"/></Inverter>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="3.0;5.25;0.0"
+                      action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="phase1_navigate">
+    <Sequence>
+      <SetBlackboard value="unknown" output_key="@forward_outcome"/>
+      <Parallel success_count="1" failure_count="1">
         <ReactiveSequence>
+          <IsGameStatus name="IsGameRunning"
+                        max_remain_time="65535"
+                        min_remain_time="0"
+                        expected_game_progress="4"
+                        key_port="{@referee_gameStatus}"/>
+          <KeepRunningUntilFailure>
+            <Sequence>
+              <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                                     yaw_min="-3.14159" yaw_max="3.14159"
+                                     pitch_min="-0.3" pitch_max="0.3"
+                                     duration="0" topic_name="gimbal_scan_cmd"/>
+              <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+              <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+            </Sequence>
+          </KeepRunningUntilFailure>
+        </ReactiveSequence>
+        <RetryUntilSuccessful num_attempts="-1">
+          <Fallback>
+            <Sequence>
+              <Fallback>
+                <SubTree ID="phase1_navigate_forward"/>
+                <ForceFailure>
+                  <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+                </ForceFailure>
+              </Fallback>
+              <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+              <SetBlackboard value="arrived" output_key="@forward_outcome"/>
+            </Sequence>
+            <Sequence>
+              <IsHpLow threshold="150"/>
+              <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+              <SetBlackboard value="low_hp" output_key="@forward_outcome"/>
+            </Sequence>
+            <ForceFailure>
+              <Sequence>
+                <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+                <Sleep msec="2000"/>
+              </Sequence>
+            </ForceFailure>
+          </Fallback>
+        </RetryUntilSuccessful>
+      </Parallel>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- HP<=0 also matches HP<=150; Python's later direct-RECOVER branch is unreachable. -->
+  <BehaviorTree ID="competition_round">
+    <Sequence>
+      <SubTree ID="phase1_navigate"/>
+      <Switch2 variable="{@forward_outcome}" case_1="arrived" case_2="low_hp">
+        <SubTree ID="competition_combat"/>
+        <AlwaysSuccess/>
+        <AlwaysFailure/>
+      </Switch2>
+      <SubTree ID="competition_retreat"/>
+      <SubTree ID="competition_recover"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- ============ Main tree: INIT -> WAIT_GAME -> repeated competition rounds ============ -->
+  <BehaviorTree ID="competition_phase1">
+    <Fallback>
+      <Sequence>
           <SubTree ID="phase1_init"/>
           <SubTree ID="phase1_wait_game"/>
-          <SubTree ID="phase1_navigate"/>
-        </ReactiveSequence>
+          <ReactiveSequence>
+            <IsGameStatus expected_game_progress="4" min_remain_time="0" max_remain_time="65535"/>
+            <Repeat num_cycles="-1">
+              <SubTree ID="competition_round"/>
+            </Repeat>
+          </ReactiveSequence>
+      </Sequence>
+      <ForceSuccess>
+        <Sequence>
+          <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+          <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+          <PublishGimbalVelocity gimbal_vel_yaw="0" gimbal_vel_pitch="0"
+                                 yaw_min="-3.14159" yaw_max="3.14159"
+                                 pitch_min="-0.3" pitch_max="0.3"
+                                 duration="0" topic_name="gimbal_scan_cmd"/>
+          <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+        </Sequence>
       </ForceSuccess>
-    </KeepRunningUntilFailure>
+    </Fallback>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->

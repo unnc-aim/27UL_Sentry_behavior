@@ -102,8 +102,8 @@ ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
 manual_start=0，应返回 FAILURE。两个出口都会由调试包装发布全零停止输出，
 包括额外的一次零 Twist；调试树不会自动重启或发送撤退导航目标。
 
-正式子树仅在低 HP 时关闭自瞄并交给后续 RETREAT；比赛结束时由后续主树安全
-分支完成 spin/扫描/底盘停止。验证正式比赛 gate 时，将调试 params 的 target_tree
+正式子树仅在低 HP 时关闭自瞄并交给后续 RETREAT；完整主树 `competition_phase1`
+现已提供比赛结束时的 spin/扫描/底盘安全收口。验证单独的正式比赛 gate 时，将调试 params 的 target_tree
 临时设为 `competition_combat`，先持续发布下列模拟消息，再启动服务与客户端：
 
 ```bash
@@ -160,8 +160,9 @@ ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 0}'
 前两条消息应在启动目标前发送；最后一条用于手动停止。调试树成功到达、
 HP=0 撤退失败或手动停止时，都发布全零停止输出后结束本轮；它不会自动进入
 RECOVER，也不会自动重启。真实目标由 Nav2 接收，因此只在仿真或安全隔离的
-台架运行。正式 `competition_retreat` 的比赛结束 FAILURE 出口等待第 6 批
-根部安全收口完成，其余输出归零按 BT-013 跟踪。
+台架运行。单独运行正式 `competition_retreat` 时，它的比赛结束 FAILURE 出口
+仍没有全零输出；完整主树 `competition_phase1` 的根部安全收口已在第 6 批添加，
+实际 ROS topic 验证仍按 BT-013 跟踪。
 
 ## 第四、五批 RECOVER 验证
 
@@ -202,7 +203,34 @@ ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg
 先将 HP 设为 399，再手动启动；观察 `/cmd_spin`、`/gimbal_scan_cmd`、
 `/auto_aim_switch` 约 5Hz 持续输出 7.0、0.5、0，`/cmd_vel_nav2_result`
 仅在入口输出一次零速度。HP 设为 400 后调试树停止并全零收口；若仍在等待，
-发布 `/manual_start=0` 可手动中止并全零收口。正式子树目前未接入主树，
-比赛结束时的统一安全收口仍由第 6 批完成（BT-013）。
+发布 `/manual_start=0` 可手动中止并全零收口。正式子树已接入第 6 批主树；
+单独运行正式子树仍无全零出口，主树安全收口待 ROS 验证（BT-013）。
 若要验证提前出发路径，重新运行调试树，先持续发布 HP=350，再设置
 `/manual_start=1`；保持 HP=350 超过 30 秒，应自动返回 SUCCESS 并全零收口。
+
+## 第六批完整比赛循环验证
+
+默认 `target_tree=competition_phase1` 现连接 INIT、WAIT_GAME、NAVIGATE、COMBAT、
+RETREAT、RECOVER，并在 RECOVER 成功后重新从前进路线第一航点开始。前进路线
+每个航点开始前检查 HP；当前目标执行期间 HP 下降不会立即取消目标，符合 Python。
+导航失败会停车并等待 2 秒，从第一航点重试；HP<=150 时跳过 COMBAT 进入
+RETREAT，HP=0 仍按 Python 的条件优先级先进入 RETREAT（BT-018）。
+
+WAIT_GAME 等待期间返回 RUNNING，入口只发一次零 Twist；云台、spin、自瞄
+按 tick 重发。比赛结束或阶段 FAILURE 时，根部一次性发布自瞄 0、spin 0、
+云台零速度和底盘零 Twist，然后结束整棵树。此收口不覆盖外部 action cancel、
+进程异常或 Control+C；这些路径仍按既有问题记录处理。
+
+在已 source ROS 2 和依赖工作空间的环境执行：
+
+```bash
+colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
+colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_phase1$' --output-on-failure
+colcon test-result --verbose
+```
+
+CTest 加载四份正式 XML、真实 HP/热量/比赛条件插件，以记录型导航及发布节点
+模拟完整循环。检查 0～65535 比赛时间、低 HP 航点分流、HP=0 先撤退、
+2 秒导航退避、RECOVER 后再次前进、比赛结束取消目标与四项归零，
+以及 COMBAT 的 FAILURE 不会被导航重试吞掉。CTest 不验证 ROS topic 序列化、
+真实 Nav2 取消和硬件控制链路。本机未运行 ROS 构建或 CTest；通过前不要上车。
