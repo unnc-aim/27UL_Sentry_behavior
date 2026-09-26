@@ -10,11 +10,7 @@
                              pitch_min="-0.3" pitch_max="0.3"
                              duration="0" topic_name="gimbal_scan_cmd"/>
       <Parallel success_count="1" failure_count="1">
-        <Inverter>
-          <KeepRunningUntilFailure>
-            <IsHpLow threshold="399" hp_low="{recover_hp_low}"/>
-          </KeepRunningUntilFailure>
-        </Inverter>
+        <WaitForRecovery full_hp="400" enough_hp="350" patience_ms="30000"/>
         <KeepRunningUntilFailure>
           <Sequence>
             <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>

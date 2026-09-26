@@ -143,6 +143,77 @@ int main(int argc, char ** argv)
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Full HP on entry advances");
     require(count("cmd_vel") == 1 && last("cmd_spin") == 7, "Entry outputs still publish");
 
+    auto ready = factory.createTreeFromText(R"(
+      <root BTCPP_format="4"><BehaviorTree ID="recover_readiness_unit">
+        <WaitForRecovery full_hp="400" enough_hp="350" patience_ms="600"/>
+      </BehaviorTree></root>)", local);
+    set_hp(349);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "HP 349 waits");
+    std::this_thread::sleep_for(std::chrono::milliseconds(630));
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "HP 349 cannot leave on time");
+    set_hp(350);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "HP 350 leaves after patience");
+    ready.haltTree();
+
+    set_hp(350);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "New recovery starts clock");
+    std::this_thread::sleep_for(std::chrono::milliseconds(630));
+    require(ready.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Continuous HP 350 leaves");
+    ready.haltTree();
+
+    set_hp(380);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Begin drop-order check");
+    std::this_thread::sleep_for(std::chrono::milliseconds(630));
+    set_hp(350);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::SUCCESS,
+      "Ready check precedes snapshot decrease, as in Python");
+    ready.haltTree();
+
+    set_hp(380);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Begin minimum reset check");
+    std::this_thread::sleep_for(std::chrono::milliseconds(320));
+    set_hp(340);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "New minimum resets clock");
+    set_hp(350);
+    std::this_thread::sleep_for(std::chrono::milliseconds(330));
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Drop delays departure");
+    std::this_thread::sleep_for(std::chrono::milliseconds(330));
+    require(ready.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Departure after reset clock");
+    ready.haltTree();
+
+    set_hp(300);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Begin running-minimum check");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    set_hp(380);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Recovery above minimum waits");
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    set_hp(370);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING,
+      "Drop above minimum does not reset");
+    std::this_thread::sleep_for(std::chrono::milliseconds(430));
+    require(ready.tickExactlyOnce() == BT::NodeStatus::SUCCESS,
+      "Python running-minimum snapshot permits departure");
+    ready.haltTree();
+
+    set_hp(0);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Dead robot waits");
+    std::this_thread::sleep_for(std::chrono::milliseconds(630));
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "HP zero resets clock");
+    set_hp(350);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING,
+      "Revival does not leave immediately");
+    std::this_thread::sleep_for(std::chrono::milliseconds(630));
+    require(ready.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Revival waits new patience");
+    ready.haltTree();
+
+    set_hp(350);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Begin halt reset check");
+    std::this_thread::sleep_for(std::chrono::milliseconds(630));
+    ready.haltTree();
+    require(ready.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Halt restarts recovery clock");
+    set_hp(400);
+    require(ready.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Full HP bypasses patience");
+
     set_game(0);
     set_hp(399);
     std_msgs::msg::Int32 manual;

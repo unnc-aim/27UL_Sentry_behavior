@@ -163,17 +163,18 @@ RECOVER，也不会自动重启。真实目标由 Nav2 接收，因此只在仿�
 台架运行。正式 `competition_retreat` 的比赛结束 FAILURE 出口等待第 6 批
 根部安全收口完成，其余输出归零按 BT-013 跟踪。
 
-## 第四批 RECOVER 满血路径验证
+## 第四、五批 RECOVER 验证
 
-`competition_recover` 只实现 HP 满 400 后出发：比赛进行且 HP<400 时保持
-RUNNING，HP>=400 返回 SUCCESS，比赛结束返回 FAILURE。HP 消息尚未到达时
-沿用 Python 初值 400；比赛 gate 使用完整 0～65535 剩余时间范围。第 5 批
-才加入 HP>=350 且等待 30 秒的提前出发条件。
+`competition_recover` 在比赛进行时等待恢复：HP>=400 立即 SUCCESS；
+HP>=350 且本轮计时严格超过 30 秒也返回 SUCCESS；其余保持 RUNNING。
+比赛结束返回 FAILURE。HP 消息尚未到达时沿用 Python 初值 400；比赛 gate
+使用完整 0～65535 剩余时间范围。
 
 进入阶段按 Python 顺序发布自瞄 0、spin 7.0、一次零 Twist 和扫描 0.5。
 等待时仅自瞄、spin、扫描按 5Hz tick 重发，零 Twist 不持续发布。
-`KeepRunningUntilFailure` 将 HP<400 的条件成功保持为 RUNNING；HP>=400 时
-条件失败，再经 `Inverter` 转为阶段 SUCCESS，不会使用同步无限重试。
+第 5 批的 `WaitForRecovery` 是有状态 RUNNING 节点；其 HP 快照保存运行最小值，
+只在跌破该最小值或 HP<=0 时重置计时。这刻意保留 Python 的缺陷，见 BT-017。
+`patience_ms=30000` 使用墙上时间，自动测试用 600 ms 缩短等待，不改变正式值。
 
 在已 source ROS 2 和依赖工作空间的环境运行：
 
@@ -185,7 +186,8 @@ colcon test-result --verbose
 
 CTest 加载正式和调试 XML、真实 HP/比赛/手动条件插件，用记录型发布节点检查
 399→400、HP=0 等待、比赛结束、入口一次性停车、等待心跳及调试树手动停止。
-它不验证真实 ROS topic 频率或控制链路。
+还直接以 600 ms 配置检查 349/350 门槛、跌破历史最小值、回血后小幅掉血、
+HP=0 重置、满血立即出发和 halt 重入。它不验证真实 ROS topic 频率或控制链路。
 
 独立调试树使用 `competition_test_recover`，仅在隔离 ROS_DOMAIN_ID 的仿真或
 安全台架运行，不能与其他控制树或 Python 控制器同时运行：
@@ -202,3 +204,5 @@ ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg
 仅在入口输出一次零速度。HP 设为 400 后调试树停止并全零收口；若仍在等待，
 发布 `/manual_start=0` 可手动中止并全零收口。正式子树目前未接入主树，
 比赛结束时的统一安全收口仍由第 6 批完成（BT-013）。
+若要验证提前出发路径，重新运行调试树，先持续发布 HP=350，再设置
+`/manual_start=1`；保持 HP=350 超过 30 秒，应自动返回 SUCCESS 并全零收口。

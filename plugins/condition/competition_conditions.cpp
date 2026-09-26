@@ -98,10 +98,76 @@ void TrackHeat::onHalted()
   setOutput("aim_allowed", 0);
 }
 
+WaitForRecovery::WaitForRecovery(const std::string & name, const BT::NodeConfig & config)
+: BT::StatefulActionNode(name, config)
+{
+}
+
+BT::PortsList WaitForRecovery::providedPorts()
+{
+  return {
+    BT::InputPort<dji_referee_protocol::msg::RobotPerformance>(
+      "hp_port", "{@referee_robotPerformance}", "Self robot performance message"),
+    BT::InputPort<int>("full_hp", 400, "Leave immediately at or above this HP"),
+    BT::InputPort<int>("enough_hp", 350, "Leave after patience at or above this HP"),
+    BT::InputPort<int>("patience_ms", 30000, "Recovery wait in wall-clock milliseconds"),
+  };
+}
+
+BT::NodeStatus WaitForRecovery::onStart()
+{
+  const auto full = getInput<int>("full_hp");
+  const auto enough = getInput<int>("enough_hp");
+  const auto patience = getInput<int>("patience_ms");
+  if (!full || !enough || !patience || enough.value() < 0 ||
+    enough.value() >= full.value() || full.value() > 65535 || patience.value() < 0)
+  {
+    throw BT::RuntimeError(
+      "WaitForRecovery: require 0 <= enough_hp < full_hp <= 65535 and patience_ms >= 0");
+  }
+  const auto msg = getInput<dji_referee_protocol::msg::RobotPerformance>("hp_port");
+  hp_snapshot_ = msg ? msg->current_hp : 400;
+  started_at_ = std::chrono::system_clock::now();
+  return onRunning();
+}
+
+BT::NodeStatus WaitForRecovery::onRunning()
+{
+  const auto msg = getInput<dji_referee_protocol::msg::RobotPerformance>("hp_port");
+  const int hp = msg ? msg->current_hp : 400;
+  const int full = getInput<int>("full_hp").value();
+  const int enough = getInput<int>("enough_hp").value();
+  const int patience = getInput<int>("patience_ms").value();
+
+  if (hp >= full) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  const auto now = std::chrono::system_clock::now();
+  if (hp >= enough && now - started_at_ > std::chrono::milliseconds(patience)) {
+    return BT::NodeStatus::SUCCESS;
+  }
+  // Match Python's running-minimum snapshot and its check order.
+  if (hp < hp_snapshot_) {
+    hp_snapshot_ = hp;
+    started_at_ = std::chrono::system_clock::now();
+  }
+  if (hp <= 0) {
+    started_at_ = std::chrono::system_clock::now();
+  }
+  return BT::NodeStatus::RUNNING;
+}
+
+void WaitForRecovery::onHalted()
+{
+  hp_snapshot_ = 400;
+  started_at_ = {};
+}
+
 }  // namespace pb2025_sentry_behavior
 
 BT_REGISTER_NODES(factory)
 {
   factory.registerNodeType<pb2025_sentry_behavior::IsHpLow>("IsHpLow");
   factory.registerNodeType<pb2025_sentry_behavior::TrackHeat>("TrackHeat");
+  factory.registerNodeType<pb2025_sentry_behavior::WaitForRecovery>("WaitForRecovery");
 }
