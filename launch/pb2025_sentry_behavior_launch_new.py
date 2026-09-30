@@ -25,7 +25,7 @@ from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
-    bringup_dir = get_package_share_directory("pb2025_sentry_behavior")
+    bringup_dir = get_package_share_directory("behavior")
 
     namespace = LaunchConfiguration("namespace")
     use_sim_time = LaunchConfiguration("use_sim_time")
@@ -64,7 +64,7 @@ def generate_launch_description():
             SetRemap("/tf_static", "tf_static"),
             SetRemap("cmd_vel", "cmd_vel_nav2_result"),
             Node(
-                package="pb2025_sentry_behavior",
+                package="behavior",
                 executable="pb2025_sentry_behavior_server",
                 name="pb2025_sentry_behavior_server",
                 output="screen",
@@ -72,7 +72,7 @@ def generate_launch_description():
                 arguments=["--ros-args", "--log-level", log_level],
             ),
             Node(
-                package="pb2025_sentry_behavior",
+                package="behavior",
                 executable="pb2025_sentry_behavior_client",
                 name="pb2025_sentry_behavior_client",
                 output="screen",

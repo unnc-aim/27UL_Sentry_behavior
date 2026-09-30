@@ -7,9 +7,9 @@ pb2025_sentry_behavior_server:
     ros_plugins_timeout: 1000
     use_cout_logger: true
     plugins:
-      - pb2025_sentry_behavior/bt_plugins
+      - behavior/bt_plugins
     behavior_trees:
-      - pb2025_sentry_behavior/behavior_trees
+      - behavior/behavior_trees
 
 pb2025_sentry_behavior_client:
   ros__parameters:

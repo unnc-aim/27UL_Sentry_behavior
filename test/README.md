@@ -20,8 +20,8 @@ SUCCESS，否则 FAILURE。可选 bool 输出 `hp_low` 用于观察结果。
 在已经 source ROS 和依赖工作空间的终端，在包含此包的工作空间运行：
 
 ```bash
-colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_conditions$' --output-on-failure
+colcon build --packages-select behavior --cmake-args -DBUILD_TESTING=ON
+colcon test --packages-select behavior --ctest-args -R '^competition_conditions$' --output-on-failure
 colcon test-result --verbose
 ```
 
@@ -33,7 +33,7 @@ colcon test-result --verbose
 构建并 source install/setup.bash 后运行（空 namespace）：
 
 ```bash
-ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix pb2025_sentry_behavior)/share/pb2025_sentry_behavior/params/sentry_behavior_conditions_test.yaml"
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix behavior)/share/behavior/params/sentry_behavior_conditions_test.yaml"
 ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
 ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 151}'
 ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 150}'
@@ -69,7 +69,7 @@ HP/热量消息缺失仍分别按 400/0 处理。
 自动回归（先执行上面的 colcon build）：
 
 ```bash
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_(conditions|combat)$' --output-on-failure
+colcon test --packages-select behavior --ctest-args -R '^competition_(conditions|combat)$' --output-on-failure
 colcon test-result --verbose
 ```
 
@@ -81,7 +81,7 @@ halt 重入和调试入口两个出口。它不验证 ROS 消息序列化、实�
 所有终端使用同一个 domain；不要同时运行其他控制树或 Python 控制器。
 
 ```bash
-ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix pb2025_sentry_behavior)/share/pb2025_sentry_behavior/params/sentry_behavior_combat_test.yaml"
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix behavior)/share/behavior/params/sentry_behavior_combat_test.yaml"
 ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 151}'
 ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
 ```
@@ -136,8 +136,8 @@ HP 缺少消息时沿用 Python 初值 400；比赛 gate 采用 `game_progress=4
 在已 source ROS 2 和依赖工作空间的环境运行：
 
 ```bash
-colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_retreat$' --output-on-failure
+colcon build --packages-select behavior --cmake-args -DBUILD_TESTING=ON
+colcon test --packages-select behavior --ctest-args -R '^competition_retreat$' --output-on-failure
 colcon test-result --verbose
 ```
 
@@ -151,7 +151,7 @@ ROS_DOMAIN_ID 的仿真环境用以下 params 运行并观察 `/cmd_spin`、
 `/gimbal_scan_cmd`、`/auto_aim_switch`、`/cmd_vel_nav2_result`：
 
 ```bash
-ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix pb2025_sentry_behavior)/share/pb2025_sentry_behavior/params/sentry_behavior_retreat_test.yaml"
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix behavior)/share/behavior/params/sentry_behavior_retreat_test.yaml"
 ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 400}'
 ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
 ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 0}'
@@ -180,8 +180,8 @@ HP>=350 且本轮计时严格超过 30 秒也返回 SUCCESS；其余保持 RUNNI
 在已 source ROS 2 和依赖工作空间的环境运行：
 
 ```bash
-colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_recover$' --output-on-failure
+colcon build --packages-select behavior --cmake-args -DBUILD_TESTING=ON
+colcon test --packages-select behavior --ctest-args -R '^competition_recover$' --output-on-failure
 colcon test-result --verbose
 ```
 
@@ -194,7 +194,7 @@ HP=0 重置、满血立即出发和 halt 重入。它不验证真实 ROS topic �
 安全台架运行，不能与其他控制树或 Python 控制器同时运行：
 
 ```bash
-ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix pb2025_sentry_behavior)/share/pb2025_sentry_behavior/params/sentry_behavior_recover_test.yaml"
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix behavior)/share/behavior/params/sentry_behavior_recover_test.yaml"
 ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 399}'
 ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
 ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 400}'
@@ -224,8 +224,8 @@ WAIT_GAME 等待期间返回 RUNNING，入口只发一次零 Twist；云台、sp
 在已 source ROS 2 和依赖工作空间的环境执行：
 
 ```bash
-colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_phase1$' --output-on-failure
+colcon build --packages-select behavior --cmake-args -DBUILD_TESTING=ON
+colcon test --packages-select behavior --ctest-args -R '^competition_phase1$' --output-on-failure
 colcon test-result --verbose
 ```
 

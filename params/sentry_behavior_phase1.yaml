@@ -8,10 +8,10 @@ pb2025_sentry_behavior_server:
     use_cout_logger: false
 
     plugins:
-      - pb2025_sentry_behavior/bt_plugins
+      - behavior/bt_plugins
 
     behavior_trees:
-      - pb2025_sentry_behavior/behavior_trees
+      - behavior/behavior_trees
 
 pb2025_sentry_behavior_client:
   ros__parameters:
