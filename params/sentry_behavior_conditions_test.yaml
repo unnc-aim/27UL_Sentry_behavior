@@ -1,4 +1,4 @@
-pb2025_sentry_behavior_server:
+behavior_server:
   ros__parameters:
     use_sim_time: false
     action_name: pb2025_sentry_behavior
@@ -7,11 +7,11 @@ pb2025_sentry_behavior_server:
     ros_plugins_timeout: 1000
     use_cout_logger: true
     plugins:
-      - pb2025_sentry_behavior/bt_plugins
+      - behavior/bt_plugins
     behavior_trees:
-      - pb2025_sentry_behavior/behavior_trees
+      - behavior/behavior_trees
 
-pb2025_sentry_behavior_client:
+behavior_client:
   ros__parameters:
     use_sim_time: false
     target_tree: competition_test_conditions
