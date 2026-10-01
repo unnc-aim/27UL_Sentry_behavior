@@ -1,4 +1,4 @@
-#include "pb2025_sentry_behavior/plugins/condition/competition_conditions.hpp"
+#include "behavior/plugins/condition/competition_conditions.hpp"
 
 #include "behaviortree_cpp/bt_factory.h"
 #include "dji_referee_protocol/msg/robot_heat.hpp"

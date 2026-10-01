@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/condition/is_attacked.hpp"
+#include "behavior/plugins/condition/is_attacked.hpp"
 
 #include "dji_referee_protocol/msg/damage_state.hpp"
 

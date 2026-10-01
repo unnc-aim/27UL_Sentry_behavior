@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/action/calculate_attack_pose.hpp"
+#include "behavior/plugins/action/calculate_attack_pose.hpp"
 
 #include "auto_aim_interfaces/msg/target.hpp"
 #include "nav2_util/node_utils.hpp"

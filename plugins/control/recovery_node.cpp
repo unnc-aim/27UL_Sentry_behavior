@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/control/recovery_node.hpp"
+#include "behavior/plugins/control/recovery_node.hpp"
 
 #include <string>
 

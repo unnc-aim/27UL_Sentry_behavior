@@ -1,4 +1,4 @@
-#include "pb2025_sentry_behavior/plugins/condition/is_manual_start.hpp"
+#include "behavior/plugins/condition/is_manual_start.hpp"
 
 namespace pb2025_sentry_behavior
 {

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/action/send_nav2_through_poses.hpp"
+#include "behavior/plugins/action/send_nav2_through_poses.hpp"
 
-#include "pb2025_sentry_behavior/custom_types.hpp"
+#include "behavior/custom_types.hpp"
 
 namespace pb2025_sentry_behavior
 {

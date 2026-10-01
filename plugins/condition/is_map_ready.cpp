@@ -16,7 +16,7 @@
  * 当前 competition_phase1 主树在初始化检查失败后等待 500 ms，再次检查。
  */
 
-#include "pb2025_sentry_behavior/plugins/condition/is_map_ready.hpp"                // 引入本类声明，供下方定义成员函数。
+#include "behavior/plugins/condition/is_map_ready.hpp"                              // 引入本类声明，供下方定义成员函数。
 
 namespace pb2025_sentry_behavior                                                    // 与头文件中的命名空间对应。
 {                                                                                   // 命名空间开始，下方成员函数属于此空间中的类。

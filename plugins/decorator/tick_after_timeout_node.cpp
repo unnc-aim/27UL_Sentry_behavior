@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/decorator/tick_after_timeout_node.hpp"
+#include "behavior/plugins/decorator/tick_after_timeout_node.hpp"
 
 namespace pb2025_sentry_behavior
 {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/action/pub_twist.hpp"
+#include "behavior/plugins/action/pub_twist.hpp"
 
 namespace pb2025_sentry_behavior
 {

@@ -1,4 +1,4 @@
-#include "pb2025_sentry_behavior/plugins/condition/is_nav2_ready.hpp"
+#include "behavior/plugins/condition/is_nav2_ready.hpp"
 
 namespace pb2025_sentry_behavior
 {
