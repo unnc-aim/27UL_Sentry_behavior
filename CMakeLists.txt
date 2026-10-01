@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(pb2025_sentry_behavior)
+project(behavior)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,7 +24,7 @@ ament_auto_find_build_dependencies()
 ## Build ##
 ###########
 
-ament_auto_add_executable(pb2025_sentry_behavior_server src/pb2025_sentry_behavior_server.cpp)
+ament_auto_add_executable(behavior_server src/pb2025_sentry_behavior_server.cpp)
 
 ament_auto_add_library(action_client SHARED
   src/pb2025_sentry_behavior_client.cpp
@@ -32,7 +32,7 @@ ament_auto_add_library(action_client SHARED
 
 rclcpp_components_register_node(action_client
   PLUGIN pb2025_sentry_behavior::SentryBehaviorClient
-  EXECUTABLE pb2025_sentry_behavior_client
+  EXECUTABLE behavior_client
 )
 
 ####### Conditions #######
