@@ -1,67 +1,151 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<root BTCPP_format="4" main_tree_to_execute="competition_phase1">
+<root BTCPP_format="4"
+      main_tree_to_execute="competition_phase1">
 
-  <!-- ============ INIT: readiness gates ============ -->
+  <!-- =====================================================================
+       【架构概览 & 阅读指南】
+       
+       1. 顶层入口：
+          - competition_phase1 (主树)：负责初始化自检、待机等待开赛、循环执行轮次，
+            以及全局异常时的安全停机兜底。
+       
+       2. 战术流转调用链：
+          competition_phase1
+            └── competition_round (单轮调度)
+                  ├── phase1_navigate (前进阶段，输出 @forward_outcome)
+                  ├── competition_combat (战斗阶段，到达目标后触发)
+                  ├── competition_retreat (撤退阶段，残血或战斗后撤回)
+                  └── competition_recover (恢复阶段，基地补血/补弹)
+       
+       3. 黑板 (Blackboard) 关键键值：
+          - {@referee_gameStatus} : 裁判系统比赛进度 (4 为比赛进行中)
+          - @forward_outcome      : 前进结果 ("unknown" | "arrived" | "low_hp")
+  ===================================================================== -->
+
+
+  <!-- =====================================================================
+       子树：phase1_init (系统就绪检查)
+       逻辑：按序阻塞确认地图、底盘坐标变换、Nav2 导航栈可用。
+             任一节点失败将导致该子树失败，由外层触发重试循环。
+  ===================================================================== -->
   <BehaviorTree ID="phase1_init">
     <Sequence>
+      <!-- 检查 1: 地图话题接收并等待 5 秒以确保建图/载入稳定 -->
       <IsMapReady topic_name="/map"
                   settle_time="5.0"
                   timeout="120.0"/>
+
+      <!-- 检查 2: 确认定位系统工作正常 (map -> base_footprint TF 连通) -->
       <IsTfReady map_frame="map"
                  base_frame="base_footprint"
                  timeout="120.0"/>
+
+      <!-- 检查 3: 确认 Nav2 核心 Action 动作服务器已上线 -->
       <IsNav2Ready action_name="navigate_to_pose"
                    timeout="30.0"/>
     </Sequence>
   </BehaviorTree>
 
-  <!-- ============ WAIT_GAME: hold outputs, wait for IN_GAME ============ -->
+
+  <!-- =====================================================================
+       子树：phase1_wait_game (开赛前等待与待机状态保持)
+       逻辑：入场后初始化各执行器，持续保持低速扫描感知，直至裁判系统发出开赛信号。
+  ===================================================================== -->
   <BehaviorTree ID="phase1_wait_game">
     <Sequence>
-      <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
-                             yaw_min="-3.14159" yaw_max="3.14159"
-                             pitch_min="-0.3" pitch_max="0.3"
-                             duration="0" topic_name="gimbal_scan_cmd"/>
-      <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
-      <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
-      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <!-- [初始状态配置] 锁定底盘静止，关闭自瞄/小陀螺，开启云台往复低速扫描 -->
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                             gimbal_vel_pitch="0"
+                             yaw_min="-3.14159"
+                             yaw_max="3.14159"
+                             pitch_min="-0.3"
+                             pitch_max="0.3"
+                             duration="0"
+                             topic_name="gimbal_scan_cmd"/>
+      <PublishAutoAim value="0"
+                      duration="0"
+                      topic_name="auto_aim_switch"/>
+      <PublishSpinSpeed spin_speed="0"
+                        duration="0"
+                        topic_name="cmd_spin"/>
+      <PublishTwist v_x="0"
+                    v_y="0"
+                    v_yaw="0"
+                    duration="0"
+                    topic_name="cmd_vel"/>
+
+      <!-- [等待开赛循环]
+           ReactiveFallback 机制：优先检查开赛状态；
+           若未开赛 (IsGameStart 返回 FAILURE)，则持续执行下方分支维持待机输出。
+           一旦开赛条件满足，即刻中断下方循环并返回 SUCCESS。 -->
       <ReactiveFallback>
+        <!-- 开赛条件：game_progress == 4 (比赛中) -->
         <IsGameStatus name="IsGameStart"
                       max_remain_time="65535"
                       min_remain_time="0"
                       expected_game_progress="4"
                       key_port="{@referee_gameStatus}"/>
+
+        <!-- 未开赛时的保活输出循环 (保持 RUNNING) -->
         <KeepRunningUntilFailure>
           <Sequence>
-            <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
-                                   yaw_min="-3.14159" yaw_max="3.14159"
-                                   pitch_min="-0.3" pitch_max="0.3"
-                                   duration="0" topic_name="gimbal_scan_cmd"/>
-            <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
-            <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+            <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                                   gimbal_vel_pitch="0"
+                                   yaw_min="-3.14159"
+                                   yaw_max="3.14159"
+                                   pitch_min="-0.3"
+                                   pitch_max="0.3"
+                                   duration="0"
+                                   topic_name="gimbal_scan_cmd"/>
+            <PublishAutoAim value="0"
+                            duration="0"
+                            topic_name="auto_aim_switch"/>
+            <PublishSpinSpeed spin_speed="0"
+                              duration="0"
+                              topic_name="cmd_spin"/>
           </Sequence>
         </KeepRunningUntilFailure>
       </ReactiveFallback>
-      <IsTfReady map_frame="map" base_frame="base_footprint" timeout="120.0"/>
+
+      <!-- 开赛后的定位二次校验：避免开赛瞬间里程计漂移导致后续导航异常 -->
+      <IsTfReady map_frame="map"
+                 base_frame="base_footprint"
+                 timeout="120.0"/>
     </Sequence>
   </BehaviorTree>
 
-  <!-- ============ NAVIGATE: forward waypoints ============ -->
+
+  <!-- =====================================================================
+       子树：phase1_navigate_forward (前进巡航路线执行)
+       逻辑：按序依次前往三个预设点位，每个路点前均评估血量健康度。
+             任何路点导航超时 (60s) 或残血中断，都会导致本子树返回 FAILURE。
+  ===================================================================== -->
   <BehaviorTree ID="phase1_navigate_forward">
     <Sequence>
-      <Inverter><IsHpLow threshold="150"/></Inverter>
+      <!-- [路点 1 前往: (6.0, 0.0)] 前置血量门限安全判断 (HP > 150) -->
+      <Inverter>
+        <IsHpLow threshold="150"/>
+      </Inverter>
       <Timeout msec="60000">
         <SendNav2Goal goal="6.0;0.0;0.0"
                       action_name="navigate_to_pose"/>
       </Timeout>
       <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-      <Inverter><IsHpLow threshold="150"/></Inverter>
+
+      <!-- [路点 2 前往: (6.0, 5.25)] 前置血量门限安全判断 (HP > 150) -->
+      <Inverter>
+        <IsHpLow threshold="150"/>
+      </Inverter>
       <Timeout msec="60000">
         <SendNav2Goal goal="6.0;5.25;0.0"
                       action_name="navigate_to_pose"/>
       </Timeout>
       <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-      <Inverter><IsHpLow threshold="150"/></Inverter>
+
+      <!-- [路点 3 前往: (3.0, 5.25)] 前置血量门限安全判断 (HP > 150) -->
+      <Inverter>
+        <IsHpLow threshold="150"/>
+      </Inverter>
       <Timeout msec="60000">
         <SendNav2Goal goal="3.0;5.25;0.0"
                       action_name="navigate_to_pose"/>
@@ -70,10 +154,26 @@
     </Sequence>
   </BehaviorTree>
 
+
+  <!-- =====================================================================
+       子树：phase1_navigate (前进阶段顶层状态机)
+       逻辑：
+       - 并发执行：一边监听比赛状态并维持云台扫描，一边推进路径导航。
+       - 容错处理：导航失败时根据是残血 (low_hp) 还是路径受阻分别进行状态转移。
+       - 产出结果：写入 @forward_outcome ("arrived" 或 "low_hp")。
+  ===================================================================== -->
   <BehaviorTree ID="phase1_navigate">
     <Sequence>
-      <SetBlackboard value="unknown" output_key="@forward_outcome"/>
-      <Parallel success_count="1" failure_count="1">
+      <!-- 初始化黑板标记 -->
+      <SetBlackboard value="unknown"
+                    output_key="@forward_outcome"/>
+
+      <!-- 并行任务执行：任一分支 SUCCESS 即成功，任一分支 FAILURE 则整体中断 -->
+      <Parallel success_count="1"
+                failure_count="1">
+        
+        <!-- [并发线程 1: 比赛状态监听与巡航姿态保持]
+             使用 ReactiveSequence 确保每 tick 优先检查比赛状态；比赛结束则立即截断发布并返回 FAILURE -->
         <ReactiveSequence>
           <IsGameStatus name="IsGameRunning"
                         max_remain_time="65535"
@@ -82,32 +182,50 @@
                         key_port="{@referee_gameStatus}"/>
           <KeepRunningUntilFailure>
             <Sequence>
-              <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
-                                     yaw_min="-3.14159" yaw_max="3.14159"
-                                     pitch_min="-0.3" pitch_max="0.3"
-                                     duration="0" topic_name="gimbal_scan_cmd"/>
-              <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
-              <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+              <PublishGimbalVelocity gimbal_vel_yaw="0.5"
+                                     gimbal_vel_pitch="0"
+                                     yaw_min="-3.14159"
+                                     yaw_max="3.14159"
+                                     pitch_min="-0.3"
+                                     pitch_max="0.3"
+                                     duration="0"
+                                     topic_name="gimbal_scan_cmd"/>
+              <PublishAutoAim value="0"
+                              duration="0"
+                              topic_name="auto_aim_switch"/>
+              <PublishSpinSpeed spin_speed="0"
+                                duration="0"
+                                topic_name="cmd_spin"/>
             </Sequence>
           </KeepRunningUntilFailure>
         </ReactiveSequence>
+
+        <!-- [并发线程 2: 前进路线推进与异常分类决断] -->
         <RetryUntilSuccessful num_attempts="-1">
           <Fallback>
+            <!-- 决策 A: 正常走完全程 -> 刹车停稳 -> 标记为 arrived -->
             <Sequence>
               <Fallback>
                 <SubTree ID="phase1_navigate_forward"/>
+                <!-- 若路线执行失败，先强制发布刹车，再将 FAILURE 向上抛出以触发后续决策 -->
                 <ForceFailure>
                   <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
                 </ForceFailure>
               </Fallback>
               <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-              <SetBlackboard value="arrived" output_key="@forward_outcome"/>
+              <SetBlackboard value="arrived"
+                             output_key="@forward_outcome"/>
             </Sequence>
+
+            <!-- 决策 B: 导航中断系由于血量告警 (HP <= 150) -> 刹车停稳 -> 标记为 low_hp 并返回 SUCCESS 提前进入撤退 -->
             <Sequence>
               <IsHpLow threshold="150"/>
               <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-              <SetBlackboard value="low_hp" output_key="@forward_outcome"/>
+              <SetBlackboard value="low_hp"
+                             output_key="@forward_outcome"/>
             </Sequence>
+
+            <!-- 决策 C: 导航失败且血量仍健康 (如局部避障堵塞) -> 原地制动等待 2 秒后重启整条路线 -->
             <ForceFailure>
               <Sequence>
                 <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
@@ -120,53 +238,106 @@
     </Sequence>
   </BehaviorTree>
 
-  <!-- HP<=0 also matches HP<=150; Python's later direct-RECOVER branch is unreachable. -->
+
+  <!-- =====================================================================
+       子树：competition_round (单轮完整闭环战术流)
+       逻辑：前进 -> [根据到达状态选择战斗或跳过] -> 撤退返航 -> 基地恢复
+  ===================================================================== -->
   <BehaviorTree ID="competition_round">
     <Sequence>
+      <!-- 阶段 1: 执行前进路线 -->
       <SubTree ID="phase1_navigate"/>
-      <Switch2 variable="{@forward_outcome}" case_1="arrived" case_2="low_hp">
+
+      <!-- 阶段 2: 根据前进阶段产出的黑板结果分支路由
+           - case_1 (arrived): 完整走完路线到达战区，接入战斗子树
+           - case_2 (low_hp) : 半路残血退出，跳过战斗直接进入撤退
+           - default         : 异常未识别状态，直接中断本轮并返回 FAILURE -->
+      <Switch2 variable="{@forward_outcome}"
+               case_1="arrived"
+               case_2="low_hp">
         <SubTree ID="competition_combat"/>
         <AlwaysSuccess/>
         <AlwaysFailure/>
       </Switch2>
+
+      <!-- 阶段 3: 执行战术撤退返航 -->
       <SubTree ID="competition_retreat"/>
+
+      <!-- 阶段 4: 在补给区等待血量恢复 -->
       <SubTree ID="competition_recover"/>
     </Sequence>
   </BehaviorTree>
 
-  <!-- ============ Main tree: INIT -> WAIT_GAME -> repeated competition rounds ============ -->
+
+  <!-- =====================================================================
+       主树入口：competition_phase1
+       逻辑：
+       - 主干分支：持续初始化 -> 待机开赛 -> 赛时连续循环执行 competition_round。
+       - 兜底分支 (Fallback)：主流程中断或比赛结束报错时，切入安全防护程序（熄火停机）。
+  ===================================================================== -->
   <BehaviorTree ID="competition_phase1">
     <Fallback>
+      <!-- 主战术逻辑通道 -->
       <Sequence>
-          <RetryUntilSuccessful num_attempts="-1">
-            <Fallback>
-              <SubTree ID="phase1_init"/>
-              <ForceFailure><Sleep msec="500"/></ForceFailure>
-            </Fallback>
-          </RetryUntilSuccessful>
-          <SubTree ID="phase1_wait_game"/>
-          <ReactiveSequence>
-            <IsGameStatus expected_game_progress="4" min_remain_time="0" max_remain_time="65535"/>
-            <Repeat num_cycles="-1">
-              <SubTree ID="competition_round"/>
-            </Repeat>
-          </ReactiveSequence>
+        <!-- 阶段 1: 阻塞式重试初始化（间隔 500ms），直到所有基础设施完全就绪 -->
+        <RetryUntilSuccessful num_attempts="-1">
+          <Fallback>
+            <SubTree ID="phase1_init"/>
+            <ForceFailure>
+              <Sleep msec="500"/>
+            </ForceFailure>
+          </Fallback>
+        </RetryUntilSuccessful>
+
+        <!-- 阶段 2: 待机等待开赛信号 -->
+        <SubTree ID="phase1_wait_game"/>
+
+        <!-- 阶段 3: 比赛进行中的无限循环调度
+             ReactiveSequence 实时监控比赛状态；比赛结束/终止时立即打断轮次循环 -->
+        <ReactiveSequence>
+          <IsGameStatus expected_game_progress="4"
+                        min_remain_time="0"
+                        max_remain_time="65535"/>
+          <Repeat num_cycles="-1">
+            <SubTree ID="competition_round"/>
+          </Repeat>
+        </ReactiveSequence>
       </Sequence>
+
+      <!-- [全局停机兜底]
+           当主干任意步骤出现无法恢复的 FAILURE 时触发：
+           依次关闭自瞄、归零小陀螺、平息云台、底盘制动刹停，最后返回 SUCCESS 优雅退出 -->
       <ForceSuccess>
         <Sequence>
-          <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
-          <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
-          <PublishGimbalVelocity gimbal_vel_yaw="0" gimbal_vel_pitch="0"
-                                 yaw_min="-3.14159" yaw_max="3.14159"
-                                 pitch_min="-0.3" pitch_max="0.3"
-                                 duration="0" topic_name="gimbal_scan_cmd"/>
-          <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+          <PublishAutoAim value="0"
+                          duration="0"
+                          topic_name="auto_aim_switch"/>
+          <PublishSpinSpeed spin_speed="0"
+                            duration="0"
+                            topic_name="cmd_spin"/>
+          <PublishGimbalVelocity gimbal_vel_yaw="0"
+                                 gimbal_vel_pitch="0"
+                                 yaw_min="-3.14159"
+                                 yaw_max="3.14159"
+                                 pitch_min="-0.3"
+                                 pitch_max="0.3"
+                                 duration="0"
+                                 topic_name="gimbal_scan_cmd"/>
+          <PublishTwist v_x="0"
+                        v_y="0"
+                        v_yaw="0"
+                        duration="0"
+                        topic_name="cmd_vel"/>
         </Sequence>
       </ForceSuccess>
     </Fallback>
   </BehaviorTree>
 
-  <!-- Description of Node Models (used by Groot) -->
+
+  <!-- =====================================================================
+       【Groot 节点模型元数据】
+       仅用于 Groot 可视化编辑器的端口类型与参数渲染，不包含运行时控制逻辑。
+  ===================================================================== -->
   <TreeNodesModel>
     <Condition ID="IsMapReady">
       <input_port name="topic_name"
@@ -179,6 +350,7 @@
                   default="120.0"
                   type="double">Seconds before the missing map is logged as an error</input_port>
     </Condition>
+
     <Condition ID="IsTfReady">
       <input_port name="map_frame"
                   default="map"
@@ -190,6 +362,7 @@
                   default="120.0"
                   type="double">Seconds before the missing transform is logged</input_port>
     </Condition>
+
     <Condition ID="IsNav2Ready">
       <input_port name="action_name"
                   default="navigate_to_pose"
