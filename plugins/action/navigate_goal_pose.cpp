@@ -5,7 +5,7 @@
 #include "behavior/custom_types.hpp"
 #include "tf2/utils.h"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 NavigateGoalPoseAction::NavigateGoalPoseAction(
@@ -91,7 +91,7 @@ BT::NodeStatus NavigateGoalPoseAction::onRunning()
   }
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::NavigateGoalPoseAction, "NavigateGoalPose");
+CreateRosNodePlugin(behavior::NavigateGoalPoseAction, "NavigateGoalPose");

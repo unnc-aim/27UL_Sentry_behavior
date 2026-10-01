@@ -35,7 +35,7 @@
 #include "dji_referee_protocol/msg/self_color.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "std_msgs/msg/int32.hpp"
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 template <typename T>
@@ -149,14 +149,14 @@ std::optional<std::string> SentryBehaviorServer::onTreeExecutionCompleted(
   return result;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
 
   rclcpp::NodeOptions options;
-  auto action_server = std::make_shared<pb2025_sentry_behavior::SentryBehaviorServer>(options);
+  auto action_server = std::make_shared<behavior::SentryBehaviorServer>(options);
 
   RCLCPP_INFO(action_server->node()->get_logger(), "Starting SentryBehaviorServer");
 

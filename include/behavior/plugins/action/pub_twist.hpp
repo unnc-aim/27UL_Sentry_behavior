@@ -20,7 +20,7 @@
 #include "behaviortree_ros2/bt_topic_pub_action_node.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class PublishTwistAction : public BT::RosTopicPubStatefulActionNode<geometry_msgs::msg::Twist>
@@ -36,6 +36,6 @@ public:
   bool setHaltMessage(geometry_msgs::msg::Twist & msg) override;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__PUB_TWIST_HPP_

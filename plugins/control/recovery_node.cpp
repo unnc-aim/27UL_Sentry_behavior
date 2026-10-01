@@ -16,7 +16,7 @@
 
 #include <string>
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 RecoveryNode::RecoveryNode(const std::string & name, const BT::NodeConfiguration & conf)
@@ -112,10 +112,10 @@ BT::PortsList RecoveryNode::providedPorts()
   return {BT::InputPort<int>("num_attempts", 999, "Number of retries")};
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::RecoveryNode>("RecoveryNode");
+  factory.registerNodeType<behavior::RecoveryNode>("RecoveryNode");
 }

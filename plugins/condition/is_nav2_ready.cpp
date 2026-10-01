@@ -1,6 +1,6 @@
 #include "behavior/plugins/condition/is_nav2_ready.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsNav2ReadyCondition::IsNav2ReadyCondition(
@@ -50,7 +50,7 @@ BT::NodeStatus IsNav2ReadyCondition::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::IsNav2ReadyCondition, "IsNav2Ready");
+CreateRosNodePlugin(behavior::IsNav2ReadyCondition, "IsNav2Ready");

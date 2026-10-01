@@ -31,7 +31,7 @@ ament_auto_add_library(action_client SHARED
 )
 
 rclcpp_components_register_node(action_client
-  PLUGIN pb2025_sentry_behavior::SentryBehaviorClient
+  PLUGIN behavior::SentryBehaviorClient
   EXECUTABLE behavior_client
 )
 

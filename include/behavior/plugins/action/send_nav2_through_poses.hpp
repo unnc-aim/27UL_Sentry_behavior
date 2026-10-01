@@ -22,7 +22,7 @@
 #include "behaviortree_ros2/bt_action_node.hpp"
 #include "nav2_msgs/action/navigate_through_poses.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 class SendNav2ThroughPosesAction
 : public BT::RosActionNode<nav2_msgs::action::NavigateThroughPoses>
@@ -43,6 +43,6 @@ public:
 
   BT::NodeStatus onFailure(BT::ActionNodeErrorCode error) override;
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__SEND_NAV2_THROUGH_POSES_HPP_

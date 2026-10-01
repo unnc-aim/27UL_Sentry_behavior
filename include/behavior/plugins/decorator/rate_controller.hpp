@@ -20,7 +20,7 @@
 
 #include "behaviortree_cpp/decorator_node.h"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 /**
@@ -30,7 +30,7 @@ class RateController : public BT::DecoratorNode
 {
 public:
   /**
-   * @brief A constructor for pb2025_sentry_behavior::RateController
+   * @brief A constructor for behavior::RateController
    * @param name Name for the XML tag for this node
    * @param conf BT node configuration
    */
@@ -54,6 +54,6 @@ private:
   bool first_time_;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__DECORATOR__RATE_CONTROLLER_HPP_

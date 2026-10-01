@@ -19,7 +19,7 @@
 
 #include "behaviortree_cpp/control_node.h"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 /**
  * @brief The RecoveryNode has only two children and returns SUCCESS if and only if the first child
@@ -37,14 +37,14 @@ class RecoveryNode : public BT::ControlNode
 {
 public:
   /**
-   * @brief A constructor for pb2025_sentry_behavior::RecoveryNode
+   * @brief A constructor for behavior::RecoveryNode
    * @param name Name for the XML tag for this node
    * @param conf BT node configuration
    */
   RecoveryNode(const std::string & name, const BT::NodeConfiguration & conf);
 
   /**
-   * @brief A destructor for pb2025_sentry_behavior::RecoveryNode
+   * @brief A destructor for behavior::RecoveryNode
    */
   ~RecoveryNode() override = default;
 
@@ -71,6 +71,6 @@ private:
   void halt() override;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__CONTROL__RECOVERY_NODE_HPP_

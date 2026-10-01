@@ -16,7 +16,7 @@
 
 #include "dji_referee_protocol/msg/damage_state.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsAttackedCondition::IsAttackedCondition(const std::string & name, const BT::NodeConfig & config)
@@ -75,10 +75,10 @@ BT::PortsList IsAttackedCondition::providedPorts()
       "gimbal_yaw", "{gimbal_yaw}", "Move gimbal_yaw to the direction of the hit armor plate")};
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsAttackedCondition>("IsAttacked");
+  factory.registerNodeType<behavior::IsAttackedCondition>("IsAttacked");
 }

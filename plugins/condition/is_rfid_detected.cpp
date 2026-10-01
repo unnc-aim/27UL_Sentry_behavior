@@ -16,7 +16,7 @@
 
 #include "dji_referee_protocol/msg/rfid_status.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 namespace
@@ -87,10 +87,10 @@ BT::PortsList IsRfidDetectedCondition::providedPorts()
     BT::InputPort<bool>("center_gain_point", false, "中心增益点（仅 RMUL 适用）"),
   };
 }
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsRfidDetectedCondition>("IsRfidDetected");
+  factory.registerNodeType<behavior::IsRfidDetectedCondition>("IsRfidDetected");
 }

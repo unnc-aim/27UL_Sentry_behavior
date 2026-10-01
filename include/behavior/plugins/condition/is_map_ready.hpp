@@ -24,7 +24,7 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"                                          // 提供栅格地图消息 nav_msgs::msg::OccupancyGrid。
 #include "rclcpp/rclcpp.hpp"                                                        // 提供 ROS 2 C++ 节点、订阅器、时间和日志接口。
 
-namespace pb2025_sentry_behavior                                                    // 将本包的 C++ 名称放入同名命名空间。
+namespace behavior                                                                  // 将本包的 C++ 名称放入同名命名空间。
 {                                                                                   // 命名空间开始。
 
 /**
@@ -85,6 +85,6 @@ private:                                                                        
 
 };                                                                                  // 类定义结束；分号结束这条类型声明。
 
-}                                                                                   // pb2025_sentry_behavior 命名空间结束。
+}                                                                                   // behavior 命名空间结束。
 
 #endif                                                                              // 与文件开头的 #ifndef 配对，结束头文件重复包含检查。

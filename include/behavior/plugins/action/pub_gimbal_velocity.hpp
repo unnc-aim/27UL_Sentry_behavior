@@ -20,7 +20,7 @@
 #include "behaviortree_ros2/bt_topic_pub_action_node.hpp"
 #include "pb_rm_interfaces/msg/gimbal_cmd.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class PublishGimbalVelocity
@@ -38,6 +38,6 @@ protected:
   bool setHaltMessage(pb_rm_interfaces::msg::GimbalCmd & msg) override;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__PUB_GIMBAL_VELOCITY_HPP_

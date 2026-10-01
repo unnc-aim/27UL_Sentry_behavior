@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/action/print_referee_status.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 PrintRefereeStatusAction::PrintRefereeStatusAction(
@@ -203,10 +203,10 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
   return BT::NodeStatus::SUCCESS;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::PrintRefereeStatusAction>("PrintRefereeStatus");
+  factory.registerNodeType<behavior::PrintRefereeStatusAction>("PrintRefereeStatus");
 }

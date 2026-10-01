@@ -33,7 +33,7 @@
 #include "dji_referee_protocol/msg/self_color.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class PrintRefereeStatusAction : public BT::SyncActionNode
@@ -49,6 +49,6 @@ private:
   rclcpp::Logger logger_ = rclcpp::get_logger("PrintRefereeStatus");
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__PRINT_REFEREE_STATUS_HPP_

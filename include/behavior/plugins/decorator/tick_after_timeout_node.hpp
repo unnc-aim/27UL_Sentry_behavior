@@ -22,7 +22,7 @@
 #include "behaviortree_cpp/decorator_node.h"
 #include "behaviortree_cpp/tree_node.h"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 class TickAfterTimeout : public BT::DecoratorNode
 {
@@ -40,6 +40,6 @@ private:
 
   BT::NodeStatus tick() override;
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__DECORATOR__TICK_AFTER_TIMEOUT_NODE_HPP_

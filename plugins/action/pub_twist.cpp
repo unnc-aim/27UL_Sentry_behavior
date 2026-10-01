@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/action/pub_twist.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 PublishTwistAction::PublishTwistAction(
@@ -53,7 +53,7 @@ bool PublishTwistAction::setHaltMessage(geometry_msgs::msg::Twist & msg)
   return true;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::PublishTwistAction, "PublishTwist");
+CreateRosNodePlugin(behavior::PublishTwistAction, "PublishTwist");

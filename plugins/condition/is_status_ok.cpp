@@ -18,7 +18,7 @@
 #include "dji_referee_protocol/msg/robot_heat.hpp"
 #include "dji_referee_protocol/msg/robot_performance.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsStatusOKCondition::IsStatusOKCondition(
@@ -73,10 +73,10 @@ BT::PortsList IsStatusOKCondition::providedPorts()
     BT::InputPort<int>("ammo_min", 0, "Lower then minimum ammo will return FAILURE"),
   };
 }
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsStatusOKCondition>("IsStatusOK");
+  factory.registerNodeType<behavior::IsStatusOKCondition>("IsStatusOK");
 }

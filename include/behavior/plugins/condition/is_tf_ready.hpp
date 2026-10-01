@@ -10,7 +10,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 /// INIT gate of the competition state machine: wait until the localization chain
 /// can resolve `map -> base_footprint`.
@@ -34,6 +34,6 @@ private:
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   rclcpp::Time start_time_;
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__CONDITION__IS_TF_READY_HPP_

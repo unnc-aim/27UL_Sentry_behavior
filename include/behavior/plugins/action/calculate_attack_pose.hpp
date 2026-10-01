@@ -33,7 +33,7 @@ using PointStamped = geometry_msgs::msg::PointStamped;
 using Point = geometry_msgs::msg::Point;
 using PoseStamped = geometry_msgs::msg::PoseStamped;
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class CalculateAttackPoseAction : public BT::RosTopicPubNode<visualization_msgs::msg::MarkerArray>
@@ -86,6 +86,6 @@ private:
   bool has_enemy_position_{false};
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__CALCULATE_ATTACK_POSE_HPP_

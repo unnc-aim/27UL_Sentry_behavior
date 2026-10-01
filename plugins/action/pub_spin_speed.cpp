@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/action/pub_spin_speed.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 PublishSpinSpeedAction::PublishSpinSpeedAction(
@@ -46,7 +46,7 @@ bool PublishSpinSpeedAction::setHaltMessage(example_interfaces::msg::Float32 & m
   return true;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::PublishSpinSpeedAction, "PublishSpinSpeed");
+CreateRosNodePlugin(behavior::PublishSpinSpeedAction, "PublishSpinSpeed");

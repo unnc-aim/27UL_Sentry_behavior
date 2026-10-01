@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/action/pub_gimbal_absolute.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 PublishGimbalAbsolute::PublishGimbalAbsolute(
@@ -50,7 +50,7 @@ bool PublishGimbalAbsolute::setMessage(pb_rm_interfaces::msg::GimbalCmd & msg)
   return true;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::PublishGimbalAbsolute, "PublishGimbalAbsolute");
+CreateRosNodePlugin(behavior::PublishGimbalAbsolute, "PublishGimbalAbsolute");

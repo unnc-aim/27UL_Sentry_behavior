@@ -9,7 +9,7 @@
 #include "tf2_ros/buffer.h"
 #include "tf2_ros/transform_listener.h"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 class NavigateGoalPoseAction
 : public BT::RosTopicPubStatefulActionNode<geometry_msgs::msg::PoseStamped>
@@ -31,6 +31,6 @@ private:
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__NAVIGATE_GOAL_POSE_HPP_

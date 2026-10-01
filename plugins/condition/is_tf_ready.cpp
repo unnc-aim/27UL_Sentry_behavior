@@ -1,6 +1,6 @@
 #include "behavior/plugins/condition/is_tf_ready.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsTfReadyCondition::IsTfReadyCondition(
@@ -57,7 +57,7 @@ BT::NodeStatus IsTfReadyCondition::tick()
   return BT::NodeStatus::SUCCESS;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::IsTfReadyCondition, "IsTfReady");
+CreateRosNodePlugin(behavior::IsTfReadyCondition, "IsTfReady");

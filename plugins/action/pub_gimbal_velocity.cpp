@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/action/pub_gimbal_velocity.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 PublishGimbalVelocity::PublishGimbalVelocity(
@@ -86,7 +86,7 @@ bool PublishGimbalVelocity::setHaltMessage(pb_rm_interfaces::msg::GimbalCmd & ms
   return true;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::PublishGimbalVelocity, "PublishGimbalVelocity");
+CreateRosNodePlugin(behavior::PublishGimbalVelocity, "PublishGimbalVelocity");

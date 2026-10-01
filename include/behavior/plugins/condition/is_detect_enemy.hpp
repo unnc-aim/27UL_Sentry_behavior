@@ -21,7 +21,7 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "rclcpp/rclcpp.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 /**
  * @brief A BT::ConditionNode that checks for the presence of an enemy target
@@ -46,6 +46,6 @@ private:
 
   rclcpp::Logger logger_ = rclcpp::get_logger("IsDetectEnemyCondition");
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__CONDITION__IS_DETECT_ENEMY_HPP_

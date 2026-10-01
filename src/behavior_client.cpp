@@ -19,7 +19,7 @@
 
 using namespace std::chrono_literals;
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 SentryBehaviorClient::SentryBehaviorClient(const rclcpp::NodeOptions & options)
@@ -82,7 +82,7 @@ void SentryBehaviorClient::feedbackCallback(
   RCLCPP_INFO(get_logger(), "Received feedback: %s", feedback->message.c_str());
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "rclcpp_components/register_node_macro.hpp"
-RCLCPP_COMPONENTS_REGISTER_NODE(pb2025_sentry_behavior::SentryBehaviorClient)
+RCLCPP_COMPONENTS_REGISTER_NODE(behavior::SentryBehaviorClient)

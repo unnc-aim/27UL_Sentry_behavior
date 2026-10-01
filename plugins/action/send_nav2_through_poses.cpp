@@ -16,7 +16,7 @@
 
 #include "behavior/custom_types.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 SendNav2ThroughPosesAction::SendNav2ThroughPosesAction(
@@ -106,8 +106,8 @@ BT::PortsList SendNav2ThroughPosesAction::providedPorts()
   return providedBasicPorts(additional_ports);
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
 CreateRosNodePlugin(
-  pb2025_sentry_behavior::SendNav2ThroughPosesAction, "SendNav2ThroughPoses");
+  behavior::SendNav2ThroughPosesAction, "SendNav2ThroughPoses");

@@ -22,7 +22,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/client.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class SentryBehaviorClient : public rclcpp::Node
@@ -45,6 +45,6 @@ private:
   std::string target_tree_;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__BEHAVIOR_CLIENT_HPP_

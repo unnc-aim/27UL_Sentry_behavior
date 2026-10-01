@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/action/pub_auto_aim.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 PublishAutoAimAction::PublishAutoAimAction(
@@ -44,7 +44,7 @@ bool PublishAutoAimAction::setHaltMessage(std_msgs::msg::Int32 & msg)
   return true;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::PublishAutoAimAction, "PublishAutoAim");
+CreateRosNodePlugin(behavior::PublishAutoAimAction, "PublishAutoAim");

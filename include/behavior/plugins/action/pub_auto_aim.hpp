@@ -20,7 +20,7 @@
 #include "behaviortree_ros2/bt_topic_pub_action_node.hpp"
 #include "std_msgs/msg/int32.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class PublishAutoAimAction : public BT::RosTopicPubStatefulActionNode<std_msgs::msg::Int32>
@@ -36,6 +36,6 @@ public:
   bool setHaltMessage(std_msgs::msg::Int32 & msg) override;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__PUB_AUTO_AIM_HPP_

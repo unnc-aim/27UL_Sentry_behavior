@@ -23,7 +23,7 @@
 #include "dji_referee_protocol/msg/allowed_shoot.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 /**
  * @brief A BT::ConditionNode that checks robot HP, heat, and ammo
@@ -48,6 +48,6 @@ private:
 
   rclcpp::Logger logger_ = rclcpp::get_logger("IsStatusOKCondition");
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__CONDITION__IS_STATUS_OK_HPP_

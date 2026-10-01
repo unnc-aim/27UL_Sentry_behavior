@@ -10,7 +10,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 /// INIT gate of the competition state machine: wait until the Nav2 action server
 /// (`navigate_to_pose` by default) is discoverable.
@@ -37,6 +37,6 @@ private:
   std::string action_name_;
   rclcpp::Time start_time_;
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__CONDITION__IS_NAV2_READY_HPP_

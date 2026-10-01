@@ -7,7 +7,7 @@
 #include "behaviortree_cpp/action_node.h"
 #include "behaviortree_cpp/condition_node.h"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class IsHpLow : public BT::ConditionNode
@@ -45,6 +45,6 @@ private:
   std::chrono::system_clock::time_point started_at_;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__CONDITION__COMPETITION_CONDITIONS_HPP_

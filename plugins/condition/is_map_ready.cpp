@@ -18,7 +18,7 @@
 
 #include "behavior/plugins/condition/is_map_ready.hpp"                              // 引入本类声明，供下方定义成员函数。
 
-namespace pb2025_sentry_behavior                                                    // 与头文件中的命名空间对应。
+namespace behavior                                                                  // 与头文件中的命名空间对应。
 {                                                                                   // 命名空间开始，下方成员函数属于此空间中的类。
 
 /**
@@ -178,7 +178,7 @@ BT::NodeStatus IsMapReadyCondition::tick()                                      
   return BT::NodeStatus::SUCCESS;                                                   // 通知父节点本次检查成功，父节点可以推进后续步骤。
 }                                                                                   // tick() 函数结束。
 
-}                                                                                   // pb2025_sentry_behavior 命名空间结束。
+}                                                                                   // behavior 命名空间结束。
 
 /**
  * @brief 导出 ROS 行为树插件的注册入口。
@@ -189,5 +189,5 @@ BT::NodeStatus IsMapReadyCondition::tick()                                      
 #include "behaviortree_ros2/plugins.hpp"                                            // 提供用于导出插件注册入口的宏。
 
 CreateRosNodePlugin(                                                                // 导出插件注册入口。
-  pb2025_sentry_behavior::IsMapReadyCondition,                                      // 注册的完整 C++ 类名。
+  behavior::IsMapReadyCondition,                                                    // 注册的完整 C++ 类名。
   "IsMapReady");                                                                    // 行为树 XML 使用的标签名称。

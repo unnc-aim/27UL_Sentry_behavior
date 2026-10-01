@@ -5,7 +5,7 @@
 #include "dji_referee_protocol/msg/robot_performance.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsHpLow::IsHpLow(const std::string & name, const BT::NodeConfig & config)
@@ -163,11 +163,11 @@ void WaitForRecovery::onHalted()
   started_at_ = {};
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsHpLow>("IsHpLow");
-  factory.registerNodeType<pb2025_sentry_behavior::TrackHeat>("TrackHeat");
-  factory.registerNodeType<pb2025_sentry_behavior::WaitForRecovery>("WaitForRecovery");
+  factory.registerNodeType<behavior::IsHpLow>("IsHpLow");
+  factory.registerNodeType<behavior::TrackHeat>("TrackHeat");
+  factory.registerNodeType<behavior::WaitForRecovery>("WaitForRecovery");
 }

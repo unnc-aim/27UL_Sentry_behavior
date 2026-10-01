@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/condition/is_detect_enemy.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsDetectEnemyCondition::IsDetectEnemyCondition(
@@ -68,10 +68,10 @@ BT::NodeStatus IsDetectEnemyCondition::checkEnemy()
 
   return BT::NodeStatus::FAILURE;
 }
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsDetectEnemyCondition>("IsDetectEnemy");
+  factory.registerNodeType<behavior::IsDetectEnemyCondition>("IsDetectEnemy");
 }

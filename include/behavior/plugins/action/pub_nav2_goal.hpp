@@ -20,7 +20,7 @@
 #include "behaviortree_ros2/bt_topic_pub_node.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 class PubNav2GoalAction : public BT::RosTopicPubNode<geometry_msgs::msg::PoseStamped>
 {
@@ -36,6 +36,6 @@ private:
   rclcpp::Logger logger() { return node_->get_logger(); }
   rclcpp::Time now() { return node_->now(); }
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__PUB_NAV2_GOAL_HPP_

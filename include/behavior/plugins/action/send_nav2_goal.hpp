@@ -21,7 +21,7 @@
 #include "behaviortree_ros2/bt_action_node.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 class SendNav2GoalAction : public BT::RosActionNode<nav2_msgs::action::NavigateToPose>
 {
@@ -41,6 +41,6 @@ public:
 
   BT::NodeStatus onFailure(BT::ActionNodeErrorCode error) override;
 };
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__SEND_NAV2_GOAL_HPP_

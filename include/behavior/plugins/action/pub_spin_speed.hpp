@@ -21,7 +21,7 @@
 #include "example_interfaces/msg/float32.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class PublishSpinSpeedAction
@@ -38,6 +38,6 @@ public:
   bool setHaltMessage(example_interfaces::msg::Float32 & msg) override;
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__PLUGINS__ACTION__PUB_SPIN_SPEED_HPP_

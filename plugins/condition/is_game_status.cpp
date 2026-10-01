@@ -14,7 +14,7 @@
 
 #include "behavior/plugins/condition/is_game_status.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsGameStatusCondition::IsGameStatusCondition(
@@ -59,10 +59,10 @@ BT::PortsList IsGameStatusCondition::providedPorts()
     BT::InputPort<int>("max_remain_time", 420, "Maximum remaining time (s)"),
   };
 }
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsGameStatusCondition>("IsGameStatus");
+  factory.registerNodeType<behavior::IsGameStatusCondition>("IsGameStatus");
 }

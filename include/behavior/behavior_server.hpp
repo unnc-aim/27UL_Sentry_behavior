@@ -26,7 +26,7 @@
 #include "dji_referee_protocol/msg/damage_state.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 class SentryBehaviorServer : public BT::TreeExecutionServer
@@ -87,6 +87,6 @@ private:
   bool damage_on_bb_{false};
 };
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #endif  // BEHAVIOR__BEHAVIOR_SERVER_HPP_
