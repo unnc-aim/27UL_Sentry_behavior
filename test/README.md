@@ -118,51 +118,23 @@ XML 正常退出分支，输出归零仍属于计划中后续可靠性检查。
 
 ## 第三批 RETREAT 验证
 
-`competition_retreat` 是正式撤退子树。只在比赛进行中工作：依次导航
-`(6.0,5.25,0)`、`(6.0,0,0)`、`(0,0,0)`，每个目标有 60s Timeout。
-每个成功航点后发送一次零 Twist；全部到达后再发一次并返回 SUCCESS。
-导航失败时检查 HP，若 HP<=0，发零 Twist 后返回 SUCCESS，交给后续 RECOVER；
-否则发一次零 Twist，等待 2s，再从第一航点重试。比赛 gate 每 tick 检查，
-比赛结束时取消正在运行的目标或退避并返回 FAILURE，不开始下一次重试。
-HP 缺少消息时沿用 Python 初值 400；比赛 gate 采用 `game_progress=4` 和
-0～65535 全时域，保留 BT-012 对第一阶段时间窗不一致的后续跟踪。
+正式 `competition_retreat` 使用 `SendNav2ThroughPoses` 一次提交逆序五点：
+`(0.55,5.18,0)`、`(4.85,3.74,0)`、`(7.13,0.10,0)`、
+`(5.44,-1.68,0)`、`(-0.45,-0.63,0)`。整路线执行上限为 300s。
+中间点由 Nav2 连续通过，整条路线成功后由外层发布一次零 Twist。
+导航失败时，HP<=0 则发布零 Twist 并结束；其余情况等待 2s 后重试整条路线。
+比赛结束会停止当前多点目标。移动阶段持续发布自瞄 0、spin 2.2rad/s、云台 yaw 0.5。
 
-进入阶段时发送自瞄 0、spin 0、云台扫描 0.5，随后在导航和 2s 退避期间
-按 5Hz tick 持续重发三种输出；零 Twist 只在航点成功、导航失败或 HP=0
-分支各自指定位置发送。一次成功进基地后的额外零 Twist 复刻 Python 的
-`_ph_retreat()`；导航目标拒绝/失败时 Python 可能在 `_navigate_to()` 和阶段
-处理函数各停车一次，当前 XML 只在退避分支发一次，详见 BT-015。
+手动 `competition_test_retreat` 保留独立的单点路线，使用
+`/navigate_to_pose`，由 `/manual_start` 启停，移动 spin 为 0。
+原手动测试继续检查五次单点成功及停止输出。
 
-在已 source ROS 2 和依赖工作空间的环境运行：
+CTest `competition_retreat` 同时读取正式和手动 XML：正式路线应只有一次多点
+请求，手动路线仍有五次单点请求；还检查失败重试、比赛结束和手动停止。
 
 ```bash
-colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_retreat$' --output-on-failure
-colcon test-result --verbose
+colcon test --packages-select behavior --ctest-args -R '^competition_retreat$' --output-on-failure
 ```
-
-CTest 加载实际正式/调试 XML 及 HP、比赛、手动条件插件，以记录型 Nav2 动作
-模拟成功、失败和长时间 RUNNING，并检查四种出口。它不替代真实 Nav2
-取消确认、60s 时钟和 ROS topic 频率测试。
-
-独立调试入口 `competition_test_retreat` 用 `/manual_start=1` 触发，不依赖
-GameStatus；HP=0 仍需等当前导航失败后才进入 RECOVER。可在隔离
-ROS_DOMAIN_ID 的仿真环境用以下 params 运行并观察 `/cmd_spin`、
-`/gimbal_scan_cmd`、`/auto_aim_switch`、`/cmd_vel_nav2_result`：
-
-```bash
-ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix pb2025_sentry_behavior)/share/pb2025_sentry_behavior/params/sentry_behavior_retreat_test.yaml"
-ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 400}'
-ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
-ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 0}'
-```
-
-前两条消息应在启动目标前发送；最后一条用于手动停止。调试树成功到达、
-HP=0 撤退失败或手动停止时，都发布全零停止输出后结束本轮；它不会自动进入
-RECOVER，也不会自动重启。真实目标由 Nav2 接收，因此只在仿真或安全隔离的
-台架运行。单独运行正式 `competition_retreat` 时，它的比赛结束 FAILURE 出口
-仍没有全零输出；完整主树 `competition_phase1` 的根部安全收口已在第 6 批添加，
-实际 ROS topic 验证仍按 BT-013 跟踪。
 
 ## 第四、五批 RECOVER 验证
 
@@ -210,27 +182,63 @@ ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg
 
 ## 第六批完整比赛循环验证
 
-默认 `target_tree=competition_phase1` 现连接 INIT、WAIT_GAME、NAVIGATE、COMBAT、
-RETREAT、RECOVER，并在 RECOVER 成功后重新从前进路线第一航点开始。前进路线
-每个航点开始前检查 HP；当前目标执行期间 HP 下降不会立即取消目标，符合 Python。
-导航失败会停车并等待 2 秒，从第一航点重试；HP<=150 时跳过 COMBAT 进入
-RETREAT，HP=0 仍按 Python 的条件优先级先进入 RETREAT（BT-018）。
+正式入口为 `competition_phase1`。前进一次提交顺序五点，撤退一次提交逆序五点，
+两阶段使用 `/navigate_through_poses`，移动 spin 为 2.2rad/s。
+前进期间每次 tick 检查 HP，HP<=150 会停止前进目标、跳过战斗并进入撤退。
+每条路线采用 300s 执行上限；失败后等待 2s，再次提交完整路线。
+新目标发送继续使用共用 Action 节点的取消确认处理。
 
-WAIT_GAME 等待期间返回 RUNNING，入口只发一次零 Twist；云台、spin、自瞄
-按 tick 重发。比赛结束或阶段 FAILURE 时，根部一次性发布自瞄 0、spin 0、
-云台零速度和底盘零 Twist，然后结束整棵树。此收口不覆盖外部 action cancel、
-进程异常或 Control+C；这些路径仍按既有问题记录处理。
+初始化使用 `IsNav2Ready action_name="navigate_through_poses" through_poses="true"`。
+`through_poses` 默认 false，已有单点检查继续采用 `NavigateToPose`。
+等待开赛、比赛结束时 spin 为 0。战斗、恢复仍发送原有 7rad/s 指令。
+Hub 沿用现有控制来源选择：导航开启且速度有效时采用导航输入，速度过期后回到遥控输入。
+本轮仅修改行为树侧的连续路线与移动旋转；占点后的持续旋转另行处理。
 
-在已 source ROS 2 和依赖工作空间的环境执行：
+相关检查：`competition_phase1`、`competition_retreat`、`nav2_ready_types`。正赛测试记录每次多点请求，
+检查点序、运行中低血量取消、比赛结束、失败重试和下一轮前进。
+就绪检查采用独立 ROS 域 189。
+
+### 实车观察与记录
+
+沿用现有整车、导航和 AMCL 启动流程。启动正式行为树：
 
 ```bash
-colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_phase1$' --output-on-failure
-colcon test-result --verbose
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py \
+  params_file:=/home/soyo/sentry_ws/src/behavior/params/sentry_behavior_phase1.yaml
 ```
 
-CTest 加载四份正式 XML、真实 HP/热量/比赛条件插件，以记录型导航及发布节点
-模拟完整循环。检查 0～65535 比赛时间、低 HP 航点分流、HP=0 先撤退、
-2 秒导航退避、RECOVER 后再次前进、比赛结束取消目标与四项归零，
-以及 COMBAT 的 FAILURE 不会被导航重试吞掉。CTest 不验证 ROS topic 序列化、
-真实 Nav2 取消和硬件控制链路。本机未运行 ROS 构建或 CTest；通过前不要上车。
+每条路线开始时应出现 `Sending 5 poses to NavigateThroughPoses`，
+完成时出现一次 `NavigateThroughPoses succeeded!`。
+观察当前路线剩余点数：
+
+```bash
+ros2 action info /navigate_through_poses
+ros2 topic echo /navigate_through_poses/_action/feedback \
+  nav2_msgs/action/NavigateThroughPoses_FeedbackMessage \
+  --field feedback.number_of_poses_remaining --csv
+```
+
+独立终端记录实际底盘输入和输出，使用新文件夹保存每次测试：
+
+```bash
+mkdir -p /home/soyo/sentry_ws/log
+ros2 bag record --include-hidden-topics \
+  -o "/home/soyo/sentry_ws/log/continuous_route_$(date +%Y%m%d_%H%M%S)" \
+  /cmd_spin /cmd_vel /chassis_command \
+  /navigate_through_poses/_action/feedback
+```
+
+无遮挡路线中间点应连续通过；移动 `/cmd_spin` 为 2.2，最终
+`/chassis_command.spin_speed` 应体现该转速。现场同步记录遥控档位，检查中间点是否仍有
+速度间隙和遥控小陀螺接管。导航断流继续采用现有 Hub 的遥控输入处理。
+现场测试由操作人员随时准备遥控急停；急停后的零输出单独记录。
+取消命令针对新的多点 Action：
+
+```bash
+ros2 service call /navigate_through_poses/_action/cancel_goal \
+  action_msgs/srv/CancelGoal '{}'
+```
+
+正式树会重试被取消的导航；整轮结束仍使用 `game_progress=5`。
+终端文本若使用 awk 过滤，采用 `awk -W interactive` 及时记录每行输出。
+实车停止后依次结束行为树、记录程序和导航，保留终端日志及 bag。
