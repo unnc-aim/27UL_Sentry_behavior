@@ -16,6 +16,10 @@ public:
   IsHpLow(const std::string & name, const BT::NodeConfig & config);
   static BT::PortsList providedPorts();
   BT::NodeStatus tick() override;
+
+private:
+  int previous_hp_ = -1;
+  int previous_threshold_ = -1;
 };
 
 class TrackHeat : public BT::StatefulActionNode

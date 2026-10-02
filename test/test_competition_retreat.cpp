@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
     auto publisher = [&](const std::string & id, const std::string & topic,
         const std::string & value_port, BT::PortsList ports) {
         ports.insert(BT::InputPort<std::string>("topic_name"));
-        ports.insert(BT::InputPort<int>("duration", 0));
+        ports.insert(BT::InputPort<int>("duration", 0, "Publish duration in milliseconds"));
         factory.registerSimpleAction(id, [&, topic, value_port](BT::TreeNode & node) {
           require(node.getInput<std::string>("topic_name").value() == topic, "Output topic");
           require(node.getInput<int>("duration").value() == 0, "One publish per tick");
@@ -151,7 +151,8 @@ int main(int argc, char ** argv)
         global->set("referee_robotPerformance", hp);
       };
     const std::vector<std::string> route = {
-      "6.0;5.25;0.0", "6.0;0.0;0.0", "0.0;0.0;0.0"};
+      "0.55;5.18;0.0", "4.85;3.74;0.0", "7.13;0.10;0.0",
+      "5.44;-1.68;0.0", "-0.45;-0.63;0.0"};
 
     clear();
     auto tree = factory.createTree("competition_retreat", local);
@@ -162,9 +163,10 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     tree = factory.createTree("competition_retreat", local);
-    require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Three waypoints reach base");
+    require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Five waypoints reach base");
     require(TestNav::goals == route, "Retreat route and order");
-    require(count("cmd_vel") == 4 && last("cmd_vel") == 0, "Waypoint and base stops");
+    require(count("cmd_vel") == route.size() + 1 && last("cmd_vel") == 0,
+      "Waypoint and base stops");
     require(last("auto_aim_switch") == 0 && last("cmd_spin") == 0 &&
       last("gimbal_scan_cmd") == 0.5, "Retreat output values");
 
@@ -177,7 +179,7 @@ int main(int argc, char ** argv)
 
     clear();
     set_hp(400);
-    TestNav::outcomes = {false, true, true, true};
+    TestNav::outcomes = {false, true, true, true, true, true};
     tree = factory.createTree("competition_retreat", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Failure enters backoff");
     require(TestNav::goals.size() == 1 && count("cmd_vel") == 1, "Stop once on failure");
@@ -189,7 +191,8 @@ int main(int argc, char ** argv)
     std::this_thread::sleep_for(std::chrono::milliseconds(2050));
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Retry reaches base");
     require(TestNav::goals == std::vector<std::string>({
-      route[0], route[0], route[1], route[2]}), "Retry begins at first waypoint");
+      route[0], route[0], route[1], route[2], route[3], route[4]}),
+      "Retry begins at first waypoint");
 
     clear();
     TestNav::hold = true;
@@ -246,6 +249,21 @@ int main(int argc, char ** argv)
     require(debug.tickExactlyOnce() == BT::NodeStatus::FAILURE, "Manual stop returns FAILURE");
     require(TestNav::halts > 0 && last("cmd_spin") == 0 &&
       last("gimbal_scan_cmd") == 0 && last("cmd_vel") == 0, "Manual stop cancels and zeros");
+
+    clear();
+    set_hp(400);
+    manual.data = 1;
+    global->set("manual_start", manual);
+    debug = factory.createTree("competition_test_retreat", local);
+    require(debug.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Manual startup wait");
+    std::this_thread::sleep_for(std::chrono::milliseconds(220));
+    require(debug.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Manual route completes");
+    require(TestNav::goals == std::vector<std::string>({
+      "-0.45;-0.63;0.0", "5.44;-1.68;0.0", "7.13;0.10;0.0",
+      "4.85;3.74;0.0", "0.55;5.18;0.0"}), "Manual route and order");
+    require(count("cmd_vel") == 7 && last("cmd_vel") == 0 &&
+      last("auto_aim_switch") == 0 && last("cmd_spin") == 0 &&
+      last("gimbal_scan_cmd") == 0, "Manual waypoint and final stops");
 
     std::cout << "Competition retreat: all checks passed\n";
     return 0;

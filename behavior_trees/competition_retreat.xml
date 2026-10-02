@@ -3,15 +3,23 @@
   <BehaviorTree ID="competition_retreat_route">
     <Sequence>
       <Timeout msec="60000">
-        <SendNav2Goal goal="6.0;5.25;0.0" action_name="navigate_to_pose"/>
+        <SendNav2Goal goal="0.55;5.18;0.0" action_name="navigate_to_pose"/>
       </Timeout>
       <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
       <Timeout msec="60000">
-        <SendNav2Goal goal="6.0;0.0;0.0" action_name="navigate_to_pose"/>
+        <SendNav2Goal goal="4.85;3.74;0.0" action_name="navigate_to_pose"/>
       </Timeout>
       <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
       <Timeout msec="60000">
-        <SendNav2Goal goal="0.0;0.0;0.0" action_name="navigate_to_pose"/>
+        <SendNav2Goal goal="7.13;0.10;0.0" action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="5.44;-1.68;0.0" action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="-0.45;-0.63;0.0" action_name="navigate_to_pose"/>
       </Timeout>
       <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
     </Sequence>

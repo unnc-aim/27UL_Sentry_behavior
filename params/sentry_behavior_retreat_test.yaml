@@ -5,7 +5,7 @@ behavior_server:
     tick_frequency: 5
     groot2_port: 0
     ros_plugins_timeout: 1000
-    use_cout_logger: true
+    use_cout_logger: false
     plugins:
       - behavior/bt_plugins
     behavior_trees:

@@ -33,6 +33,13 @@ BT::NodeStatus IsHpLow::tick()
   // Match the Python initial HP before the first referee message.
   const int hp = msg ? msg->current_hp : 400;
   const bool low = hp <= threshold.value();
+  if (hp != previous_hp_ || threshold.value() != previous_threshold_) {
+    RCLCPP_INFO(
+      rclcpp::get_logger("IsHpLow"), "%s hp=%d threshold=%d hp_low=%d", name().c_str(), hp,
+      threshold.value(), low ? 1 : 0);
+    previous_hp_ = hp;
+    previous_threshold_ = threshold.value();
+  }
   if (config().output_ports.count("hp_low")) {
     setOutput("hp_low", low);
   }

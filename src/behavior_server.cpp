@@ -164,6 +164,7 @@ int main(int argc, char * argv[])
     rclcpp::ExecutorOptions(), 0, false, std::chrono::milliseconds(250));
   exec.add_node(action_server->node());
   exec.spin();
+  action_server->waitForTreeExecution();
   exec.remove_node(action_server->node());
 
   // Groot2 editor requires a model of your registered Nodes.

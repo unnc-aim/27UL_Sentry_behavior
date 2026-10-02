@@ -1,0 +1,154 @@
+<root BTCPP_format="4">
+    <TreeNodesModel>
+        <Condition ID="CalculateAttackPose">
+            <input_port name="costmap_port" type="nav_msgs::msg::OccupancyGrid_&lt;std::allocator&lt;void&gt; &gt;" default="{@nav_globalCostmap}">GlobalCostmap port on blackboard</input_port>
+            <input_port name="tracker_port" type="auto_aim_interfaces::msg::Target_&lt;std::allocator&lt;void&gt; &gt;" default="{@tracker_target}">Vision target port on blackboard</input_port>
+            <output_port name="goal" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;" default="{attack_pose}">Expected goal pose that send to nav2. Fill with format `x;y;yaw`</output_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Condition>
+        <Condition ID="IsAttacked">
+            <output_port name="gimbal_pitch" type="float" default="{gimbal_pitch}">Move gimbal_pitch (const 0.0) to the direction of the hit armor plate</output_port>
+            <output_port name="gimbal_yaw" type="float" default="{gimbal_yaw}">Move gimbal_yaw to the direction of the hit armor plate</output_port>
+            <input_port name="damage_port" type="dji_referee_protocol::msg::DamageState_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_damageState}">DamageState port on blackboard</input_port>
+        </Condition>
+        <Condition ID="IsDetectEnemy">
+            <input_port name="armor_id" type="std::vector&lt;int, std::allocator&lt;int&gt; &gt;" default="1;2;3;4;5;7">Expected id of armors. Multiple numbers should be separated by the character `;` in Groot2</input_port>
+            <input_port name="max_distance" type="float" default="8.000000">Distance to enemy target</input_port>
+            <input_port name="key_port" type="auto_aim_interfaces::msg::Armors_&lt;std::allocator&lt;void&gt; &gt;" default="{@detector_armors}">Vision detector port on blackboard</input_port>
+        </Condition>
+        <Condition ID="IsGameStatus">
+            <input_port name="max_remain_time" type="int" default="420">Maximum remaining time (s)</input_port>
+            <input_port name="min_remain_time" type="int" default="0">Minimum remaining time (s)</input_port>
+            <input_port name="expected_game_progress" type="int" default="4">Expected game progress stage</input_port>
+            <input_port name="key_port" type="dji_referee_protocol::msg::GameStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_gameStatus}">GameStatus port on blackboard</input_port>
+        </Condition>
+        <Condition ID="IsHpLow">
+            <output_port name="hp_low" type="bool">Result for diagnostics</output_port>
+            <input_port name="threshold" type="int" default="150">Inclusive low HP threshold</input_port>
+            <input_port name="hp_port" type="dji_referee_protocol::msg::RobotPerformance_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotPerformance}">Self robot performance message</input_port>
+        </Condition>
+        <Condition ID="IsManualStart">
+            <input_port name="start_value" type="int" default="1">Minimum value to trigger manual start</input_port>
+            <input_port name="key_port" type="std_msgs::msg::Int32_&lt;std::allocator&lt;void&gt; &gt;" default="{@manual_start}">Manual start port on blackboard</input_port>
+        </Condition>
+        <Condition ID="IsMapReady">
+            <input_port name="timeout" type="double" default="120.000000">Seconds before the missing map is logged as an error</input_port>
+            <input_port name="settle_time" type="double" default="5.000000">Seconds to keep waiting after the first map</input_port>
+            <input_port name="topic_name" type="std::string" default="/map">Latched OccupancyGrid topic to wait for</input_port>
+        </Condition>
+        <Condition ID="IsNav2Ready">
+            <input_port name="timeout" type="double" default="30.000000">Seconds before the missing server is logged</input_port>
+            <input_port name="action_name" type="std::string" default="navigate_to_pose">Action server to wait for</input_port>
+        </Condition>
+        <Condition ID="IsRfidDetected">
+            <input_port name="friendly_supply_zone_exchange" type="bool" default="false">己方与兑换区重叠的补给区</input_port>
+            <input_port name="friendly_supply_zone_non_exchange" type="bool" default="false">己方与兑换区不重叠的补给区 / RMUL 补给区</input_port>
+            <input_port name="center_gain_point" type="bool" default="false">中心增益点（仅 RMUL 适用）</input_port>
+            <input_port name="friendly_fortress_gain_point" type="bool" default="false">己方堡垒增益点</input_port>
+            <input_port name="key_port" type="dji_referee_protocol::msg::RFIDStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_rfidStatus}">RFIDStatus port on blackboard</input_port>
+        </Condition>
+        <Condition ID="IsStatusOK">
+            <input_port name="ammo_min" type="int" default="0">Lower then minimum ammo will return FAILURE</input_port>
+            <input_port name="ammo_port" type="dji_referee_protocol::msg::AllowedShoot_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_allowedShoot}">AllowedShoot for ammo check</input_port>
+            <input_port name="hp_min" type="int" default="300">Minimum HP. NOTE: Sentry init/max HP is 400</input_port>
+            <input_port name="heat_port" type="dji_referee_protocol::msg::RobotHeat_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotHeat}">RobotHeat for heat check</input_port>
+            <input_port name="heat_max" type="int" default="350">Maximum heat. NOTE: Sentry heat limit is 400</input_port>
+            <input_port name="hp_port" type="dji_referee_protocol::msg::RobotPerformance_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotPerformance}">RobotPerformance for HP check</input_port>
+        </Condition>
+        <Condition ID="IsTfReady">
+            <input_port name="timeout" type="double" default="120.000000">Seconds before the missing transform is logged</input_port>
+            <input_port name="base_frame" type="std::string" default="base_footprint">Robot base frame</input_port>
+            <input_port name="map_frame" type="std::string" default="map">Parent frame of the localization lookup</input_port>
+        </Condition>
+        <Action ID="NavigateGoalPose">
+            <input_port name="goal" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;" default="0;0;0">Expected goal pose that send to nav2. Fill with format `x;y;yaw`</input_port>
+            <input_port name="map_frame" type="std::string" default="map">Map frame</input_port>
+            <input_port name="base_frame" type="std::string" default="base_footprint">Robot base frame</input_port>
+            <input_port name="yaw_tolerance" type="double" default="0.350000">Yaw tolerance in radians</input_port>
+            <input_port name="position_tolerance" type="double" default="0.250000">Position tolerance in meters</input_port>
+            <input_port name="duration" type="std::chrono::milliseconds" default="">Publish then sleep duration in milliseconds</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Action>
+        <Action ID="PrintRefereeStatus">
+            <input_port name="self_color" type="dji_referee_protocol::msg::SelfColor_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_selfColor}">SelfColor</input_port>
+            <input_port name="constraints" type="dji_referee_protocol::msg::Constraints_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_constraints}">Constraints</input_port>
+            <input_port name="damage_state" type="dji_referee_protocol::msg::DamageState_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_damageState}">DamageState</input_port>
+            <input_port name="rfid_status" type="dji_referee_protocol::msg::RFIDStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_rfidStatus}">RFIDStatus</input_port>
+            <input_port name="allowed_shoot" type="dji_referee_protocol::msg::AllowedShoot_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_allowedShoot}">AllowedShoot</input_port>
+            <input_port name="robot_buff" type="dji_referee_protocol::msg::RobotBuff_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotBuff}">RobotBuff</input_port>
+            <input_port name="robot_heat" type="dji_referee_protocol::msg::RobotHeat_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotHeat}">RobotHeat</input_port>
+            <input_port name="robot_position" type="dji_referee_protocol::msg::RobotPosition_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotPosition}">RobotPosition</input_port>
+            <input_port name="robot_performance" type="dji_referee_protocol::msg::RobotPerformance_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotPerformance}">RobotPerformance</input_port>
+            <input_port name="ground_robot_position" type="dji_referee_protocol::msg::GroundRobotPosition_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_groundRobotPosition}">GroundRobotPosition</input_port>
+            <input_port name="robot_hp" type="dji_referee_protocol::msg::RobotHP_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotHP}">RobotHP</input_port>
+            <input_port name="field_event" type="dji_referee_protocol::msg::FieldEvent_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_fieldEvent}">FieldEvent</input_port>
+            <input_port name="game_status" type="dji_referee_protocol::msg::GameStatus_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_gameStatus}">GameStatus</input_port>
+        </Action>
+        <Condition ID="PubNav2Goal">
+            <input_port name="goal" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;" default="0;0;0">Expected goal pose that send to nav2. Fill with format `x;y;yaw`</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Condition>
+        <Action ID="PublishAutoAim">
+            <input_port name="duration" type="std::chrono::milliseconds" default="">Publish then sleep duration in milliseconds</input_port>
+            <input_port name="value" type="int" default="0">Auto-aim switch value (0=off, 1=on)</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Action>
+        <Action ID="PublishGimbalAbsolute">
+            <input_port name="gimbal_pitch" type="float">Expected Pitch angle (rad)</input_port>
+            <input_port name="gimbal_yaw" type="float">Expected Yaw angle (rad)</input_port>
+            <input_port name="duration" type="std::chrono::milliseconds" default="">Publish then sleep duration in milliseconds</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Action>
+        <Action ID="PublishGimbalVelocity">
+            <input_port name="gimbal_vel_yaw" type="float" default="0.000000">Yaw velocity (rad/s)</input_port>
+            <input_port name="pitch_max" type="float" default="1.570000">Maximum pitch range</input_port>
+            <input_port name="yaw_max" type="float" default="3.140000">Maximum yaw range</input_port>
+            <input_port name="pitch_min" type="float" default="-1.570000">Minimum pitch range</input_port>
+            <input_port name="yaw_min" type="float" default="-3.140000">Minimum yaw range</input_port>
+            <input_port name="duration" type="std::chrono::milliseconds" default="">Publish then sleep duration in milliseconds</input_port>
+            <input_port name="gimbal_vel_pitch" type="float" default="0.000000">Pitch velocity (rad/s)</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Action>
+        <Action ID="PublishSpinSpeed">
+            <input_port name="spin_speed" type="double" default="0.000000">Angular Z velocity (rad/s)</input_port>
+            <input_port name="duration" type="std::chrono::milliseconds" default="">Publish then sleep duration in milliseconds</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Action>
+        <Action ID="PublishTwist">
+            <input_port name="v_y" type="double" default="0.000000">Linear Y velocity (m/s)</input_port>
+            <input_port name="v_yaw" type="double" default="0.000000">Angular Z velocity (rad/s)</input_port>
+            <input_port name="v_x" type="double" default="0.000000">Linear X velocity (m/s)</input_port>
+            <input_port name="duration" type="std::chrono::milliseconds" default="">Publish then sleep duration in milliseconds</input_port>
+            <input_port name="topic_name" type="std::string" default="__default__placeholder__">Topic name</input_port>
+        </Action>
+        <Decorator ID="RateController">
+            <input_port name="hz" type="double" default="10.000000">Rate</input_port>
+        </Decorator>
+        <Control ID="RecoveryNode">
+            <input_port name="num_attempts" type="int" default="999">Number of retries</input_port>
+        </Control>
+        <Action ID="SendNav2Goal">
+            <input_port name="goal" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;" default="0;0;0">Expected goal pose that send to nav2. Fill with format `x;y;yaw`</input_port>
+            <input_port name="action_name" type="std::string" default="">Action server name</input_port>
+        </Action>
+        <Action ID="SendNav2ThroughPoses">
+            <input_port name="goals" type="std::string" default="">Waypoints in format 'x1;y1;yaw1|x2;y2;yaw2|...'. Each pose uses ';' separator, poses separated by '|'.</input_port>
+            <input_port name="action_name" type="std::string" default="">Action server name</input_port>
+        </Action>
+        <Decorator ID="TickAfterTimeout">
+            <input_port name="timeout" type="float">time in s to wait before ticking child again</input_port>
+        </Decorator>
+        <Action ID="TrackHeat">
+            <output_port name="aim_allowed" type="int">0 or 1 for PublishAutoAim.value</output_port>
+            <input_port name="resume_heat" type="int" default="50">Resume aim at or below this heat</input_port>
+            <input_port name="stop_heat" type="int" default="240">Disable aim at or above this heat</input_port>
+            <input_port name="heat_port" type="dji_referee_protocol::msg::RobotHeat_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotHeat}">17mm shooter heat message</input_port>
+        </Action>
+        <Action ID="WaitForRecovery">
+            <input_port name="patience_ms" type="int" default="30000">Recovery wait in wall-clock milliseconds</input_port>
+            <input_port name="enough_hp" type="int" default="350">Leave after patience at or above this HP</input_port>
+            <input_port name="full_hp" type="int" default="400">Leave immediately at or above this HP</input_port>
+            <input_port name="hp_port" type="dji_referee_protocol::msg::RobotPerformance_&lt;std::allocator&lt;void&gt; &gt;" default="{@referee_robotPerformance}">Self robot performance message</input_port>
+        </Action>
+    </TreeNodesModel>
+</root>

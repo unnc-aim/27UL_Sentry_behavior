@@ -26,11 +26,11 @@ ament_auto_find_build_dependencies()
 
 ament_auto_add_executable(behavior_server src/behavior_server.cpp)
 
-ament_auto_add_library(action_client SHARED
+ament_auto_add_library(behavior_action_client SHARED
   src/behavior_client.cpp
 )
 
-rclcpp_components_register_node(action_client
+rclcpp_components_register_node(behavior_action_client
   PLUGIN behavior::SentryBehaviorClient
   EXECUTABLE behavior_client
 )

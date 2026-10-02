@@ -70,7 +70,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
     RCLCPP_INFO(logger_, "[SelfColor] color=%s(%d)", color_str, m->color);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[SelfColor] NOT received");
+    RCLCPP_DEBUG(logger_, "[SelfColor] NOT received");
   }
 
   // --- GameStatus ---
@@ -80,7 +80,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->game_type, m->game_progress, m->stage_remain_time);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[GameStatus] NOT received");
+    RCLCPP_DEBUG(logger_, "[GameStatus] NOT received");
   }
 
   // --- RobotPerformance (self) ---
@@ -91,7 +91,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->shooter_barrel_heat_limit, m->chassis_power_limit);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[RobotPerformance] NOT received");
+    RCLCPP_DEBUG(logger_, "[RobotPerformance] NOT received");
   }
 
   // --- RobotHeat (self) ---
@@ -102,7 +102,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->buffer_energy, m->chassis_current_power);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[RobotHeat] NOT received");
+    RCLCPP_DEBUG(logger_, "[RobotHeat] NOT received");
   }
 
   // --- AllowedShoot ---
@@ -112,7 +112,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->projectile_allowance_17mm, m->projectile_allowance_42mm, m->remaining_gold_coin);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[AllowedShoot] NOT received");
+    RCLCPP_DEBUG(logger_, "[AllowedShoot] NOT received");
   }
 
   // --- Constraints (parsed) ---
@@ -123,7 +123,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->fire_allowed ? "YES" : "NO", m->speed_scale);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[Constraints] NOT received");
+    RCLCPP_DEBUG(logger_, "[Constraints] NOT received");
   }
 
   // --- RobotHP (sentry=7, outpost, base) ---
@@ -135,7 +135,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->blue_7_robot_hp, m->blue_outpost_hp, m->blue_base_hp);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[RobotHP] NOT received");
+    RCLCPP_DEBUG(logger_, "[RobotHP] NOT received");
   }
 
   // --- RobotPosition (self) ---
@@ -145,7 +145,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->x, m->y, m->angle);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[RobotPosition] NOT received");
+    RCLCPP_DEBUG(logger_, "[RobotPosition] NOT received");
   }
 
   // --- GroundRobotPosition (teammates) ---
@@ -156,7 +156,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->infantry_3_x, m->infantry_3_y, m->infantry_4_x, m->infantry_4_y);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[GroundRobotPos] NOT received");
+    RCLCPP_DEBUG(logger_, "[GroundRobotPos] NOT received");
   }
 
   // --- RobotBuff ---
@@ -166,7 +166,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->recovery_buff, m->cooling_buff, m->defence_buff, m->attack_buff);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[RobotBuff] NOT received");
+    RCLCPP_DEBUG(logger_, "[RobotBuff] NOT received");
   }
 
   // --- RFIDStatus ---
@@ -176,7 +176,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->detected_rfid_bits_low, m->detected_rfid_bits_high);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[RFIDStatus] NOT received");
+    RCLCPP_DEBUG(logger_, "[RFIDStatus] NOT received");
   }
 
   // --- FieldEvent ---
@@ -186,7 +186,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->fortress_buff_point, m->outpost_buff_point, m->base_buff_point ? 1 : 0);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[FieldEvent] NOT received");
+    RCLCPP_DEBUG(logger_, "[FieldEvent] NOT received");
   }
 
   // --- DamageState ---
@@ -196,7 +196,7 @@ BT::NodeStatus PrintRefereeStatusAction::tick()
       m->armor_id, m->damage_type);
     ++received;
   } else {
-    RCLCPP_WARN(logger_, "[DamageState] NOT received");
+    RCLCPP_DEBUG(logger_, "[DamageState] NOT received");
   }
 
   RCLCPP_INFO(logger_, "======== %d/%d topics received ========", received, total);

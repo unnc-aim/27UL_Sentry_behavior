@@ -1,5 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4" main_tree_to_execute="competition_test_retreat">
+  <BehaviorTree ID="competition_test_retreat_route">
+    <Sequence>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="-0.45;-0.63;0.0" action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="5.44;-1.68;0.0" action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="7.13;0.10;0.0" action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="4.85;3.74;0.0" action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <Timeout msec="60000">
+        <SendNav2Goal goal="0.55;5.18;0.0" action_name="navigate_to_pose"/>
+      </Timeout>
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <BehaviorTree ID="competition_test_retreat_navigation">
+    <RetryUntilSuccessful num_attempts="-1">
+      <Fallback>
+        <Sequence>
+          <SubTree ID="competition_test_retreat_route"/>
+          <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+        </Sequence>
+        <Sequence>
+          <IsHpLow threshold="0"/>
+          <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+        </Sequence>
+        <ForceFailure>
+          <Sequence>
+            <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+            <Sleep msec="2000"/>
+          </Sequence>
+        </ForceFailure>
+      </Fallback>
+    </RetryUntilSuccessful>
+  </BehaviorTree>
+
+  <BehaviorTree ID="competition_test_retreat_active">
+    <Sequence>
+      <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+      <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+      <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                             yaw_min="-3.14159" yaw_max="3.14159"
+                             pitch_min="-0.3" pitch_max="0.3"
+                             duration="0" topic_name="gimbal_scan_cmd"/>
+      <Parallel success_count="1" failure_count="1">
+        <SubTree ID="competition_test_retreat_navigation"/>
+        <KeepRunningUntilFailure>
+          <Sequence>
+            <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+            <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+            <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                                   yaw_min="-3.14159" yaw_max="3.14159"
+                                   pitch_min="-0.3" pitch_max="0.3"
+                                   duration="0" topic_name="gimbal_scan_cmd"/>
+          </Sequence>
+        </KeepRunningUntilFailure>
+      </Parallel>
+    </Sequence>
+  </BehaviorTree>
+
   <BehaviorTree ID="competition_test_retreat_stop">
     <Sequence>
       <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
@@ -25,7 +95,7 @@
           <ReactiveSequence>
             <IsManualStart start_value="1"/>
             <Parallel success_count="1" failure_count="1">
-              <SubTree ID="competition_retreat_active"/>
+              <SubTree ID="competition_test_retreat_active"/>
               <Repeat num_cycles="-1">
                 <Sequence>
                   <PrintRefereeStatus/>
