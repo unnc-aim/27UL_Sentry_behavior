@@ -3,8 +3,10 @@
   <!-- Caller supplies the game/manual gate; low HP is the only normal exit. -->
   <BehaviorTree ID="competition_combat_active">
     <Sequence>
-      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+      <!-- Sequence 按书写顺序执行；先发布转速，再用零 Twist 刷新完整速度。 -->
       <PublishSpinSpeed spin_speed="7.0" duration="0" topic_name="cmd_spin"/>
+      <!-- v_yaw=0，旋转由 cmd_spin 提供；duration=0 表示本次 tick 发布后立即完成。 -->
+      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
       <PublishGimbalVelocity gimbal_vel_yaw="1.0" gimbal_vel_pitch="0"
                              yaw_min="-3.14159" yaw_max="3.14159"
                              pitch_min="-0.3" pitch_max="0.3"
@@ -23,6 +25,8 @@
             <KeepRunningUntilFailure>
               <Sequence>
                 <PublishSpinSpeed spin_speed="7.0" duration="0" topic_name="cmd_spin"/>
+                <!-- 外层 KeepRunningUntilFailure 每次 tick 重走本序列，持续刷新零平移。 -->
+                <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
                 <PublishGimbalVelocity gimbal_vel_yaw="1.0" gimbal_vel_pitch="0"
                                        yaw_min="-3.14159" yaw_max="3.14159"
                                        pitch_min="-0.3" pitch_max="0.3"

@@ -2,7 +2,7 @@ behavior_server:
   ros__parameters:
     use_sim_time: false
     action_name: pb2025_sentry_behavior
-    tick_frequency: 5
+    tick_frequency: 20  # Hz：手动战斗测试也采用 50ms 周期，与正式树的速度刷新频率一致。
     groot2_port: 0
     ros_plugins_timeout: 1000
     use_cout_logger: false

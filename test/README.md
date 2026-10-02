@@ -61,38 +61,44 @@ FAILURE。比赛状态优先于 HP。复用 IsGameStatus 并将剩余时间范�
 HP/热量消息缺失仍分别按 400/0 处理。
 
 `competition_combat_active` 是两个入口共用的内部子树，调用方必须提供阶段 gate。
-入口依次发布零 Twist、spin 7.0、扫描 1.0、自瞄 1；随后按当前热量计算迟滞，
+入口依次发布 spin 7.0、零 Twist、扫描 1.0、自瞄 1；随后按当前热量计算迟滞，
 同 tick 发布结果。入口已过热时会先出现 1 再出现 0，与 Python 入口先开自瞄一致。
-稳定运行时每 tick 重发 spin/扫描/自瞄，Twist 不重发。首 tick 包含入口和循环
-两组输出，不应要求首 tick 每个 topic 恰好只有一条消息。
+稳定运行时每 tick 按顺序发布 spin、零 Twist、扫描、自瞄。`duration="0"`
+表示节点本次发布后立即成功；外层循环负责在后续 tick 再次执行节点。
+首 tick 同时执行入口和循环，因此会发送两次零 Twist。
+
+正赛和手动战斗配置均使用 `tick_frequency: 20`，即每 50ms 刷新一次。
+零 Twist 的 `v_yaw` 保持 0，转换节点再叠加 `/cmd_spin=7`。里程计有效且
+遥控允许导航时，最终 `/cmd_vel.twist.angular.z` 与 `/chassis_command.spin_speed`
+应为 7rad/s。HP 或比赛状态使战斗结束后，循环停止，将速度发布交给下一阶段。
 
 自动回归（先执行上面的 colcon build）：
 
 ```bash
-colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_(conditions|combat)$' --output-on-failure
+colcon test --packages-select behavior --ctest-args -R '^competition_(conditions|combat)$' --output-on-failure
 colcon test-result --verbose
 ```
 
 COMBAT 测试加载真实 HP、热量、比赛和手动条件插件及实际 XML，发布节点替换为
-记录型节点，验证一次性停车、连续重发、热量同 tick 生效、HP/比赛出口优先级、
+记录型节点，验证入口发布顺序、每 tick 的零 Twist、热量同 tick 生效、HP/比赛出口优先级、
 halt 重入和调试入口两个出口。它不验证 ROS 消息序列化、实际发布频率或 Hub 接收。
 
 独立调试树会实际发布控制命令。使用隔离 ROS_DOMAIN_ID 的仿真/台架环境，
 所有终端使用同一个 domain；不要同时运行其他控制树或 Python 控制器。
 
 ```bash
-ros2 launch pb2025_sentry_behavior pb2025_sentry_behavior_launch_new.py params_file:="$(ros2 pkg prefix pb2025_sentry_behavior)/share/pb2025_sentry_behavior/params/sentry_behavior_combat_test.yaml"
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py params_file:=/home/soyo/sentry_ws/src/behavior/params/sentry_behavior_combat_test.yaml
 ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg/RobotPerformance '{current_hp: 151}'
 ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
 ```
 
 调试入口用 manual_start 替代比赛 gate，不需要比赛消息；PrintRefereeStatus 每秒
 打印一次。另开终端用 `ros2 topic echo` 检查以下接口，用 `ros2 topic hz` 测稳定
-运行频率（目标 5 Hz，实际间隔需小于 0.5s）：
+运行频率（目标 20 Hz，速度消息实际间隔应小于 0.2s）：
 
 | Topic | 消息类型 | 稳定运行输出 |
 | --- | --- | --- |
-| `/cmd_vel_nav2_result` | `geometry_msgs/msg/Twist` | 入口一次全零，运行中不重发；launch 将 XML 的 cmd_vel 重映射到此 |
+| `/cmd_vel_nav2_result` | `geometry_msgs/msg/Twist` | 每 tick 全零；launch 将 XML 的 cmd_vel 重映射到此 |
 | `/cmd_spin` | `example_interfaces/msg/Float32` | 7.0，每 tick |
 | `/gimbal_scan_cmd` | `pb_rm_interfaces/msg/GimbalCmd` | VELOCITY，yaw=1.0、pitch=0，每 tick |
 | `/auto_aim_switch` | `std_msgs/msg/Int32` | 迟滞决定 0/1，每 tick |
@@ -190,9 +196,10 @@ ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg
 
 初始化使用 `IsNav2Ready action_name="navigate_through_poses" through_poses="true"`。
 `through_poses` 默认 false，已有单点检查继续采用 `NavigateToPose`。
-等待开赛、比赛结束时 spin 为 0。战斗、恢复仍发送原有 7rad/s 指令。
+等待开赛、比赛结束时 spin 为 0。正赛以 20Hz 执行；战斗每 tick 发布 7rad/s 和零 Twist，
+恢复仍发送原有 7rad/s 指令及入口一次零 Twist。
 Hub 沿用现有控制来源选择：导航开启且速度有效时采用导航输入，速度过期后回到遥控输入。
-本轮仅修改行为树侧的连续路线与移动旋转；占点后的持续旋转另行处理。
+连续移动与战斗速度刷新均通过现有行为树接口完成；恢复阶段的持续旋转另行处理。
 
 相关检查：`competition_phase1`、`competition_retreat`、`nav2_ready_types`。正赛测试记录每次多点请求，
 检查点序、运行中低血量取消、比赛结束、失败重试和下一轮前进。
