@@ -41,7 +41,8 @@
                  timeout="120.0"/>
 
       <!-- 检查 3: 确认 Nav2 核心 Action 动作服务器已上线 -->
-      <IsNav2Ready action_name="navigate_to_pose"
+      <IsNav2Ready action_name="navigate_through_poses"
+                   through_poses="true"
                    timeout="30.0"/>
     </Sequence>
   </BehaviorTree>
@@ -117,61 +118,20 @@
 
   <!-- =====================================================================
        子树：phase1_navigate_forward (前进巡航路线执行)
-       逻辑：按序依次前往五个预设点位，每个路点前均评估血量健康度。
-             任何路点导航超时 (60s) 或残血中断，都会导致本子树返回 FAILURE。
+       逻辑：一次提交五点连续路线，运行期间每次 tick 检查 HP。
+             整路线超时 (300s) 或 HP <= 150 时返回 FAILURE，交给外层处理。
   ===================================================================== -->
   <BehaviorTree ID="phase1_navigate_forward">
-    <Sequence>
-      <!-- 路点 1: (-0.45, -0.63)，出发前检查 HP > 150 -->
-      <Inverter>
-        <IsHpLow threshold="150"/>
-      </Inverter>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="-0.45;-0.63;0.0"
-                      action_name="navigate_to_pose"/>
+    <ReactiveSequence>
+      <!-- 每次 tick 先检查 HP；残血时停止当前多点目标。 -->
+      <Inverter><IsHpLow threshold="150"/></Inverter>
+      <!-- 300000ms 是整路线执行上限；中间点由 Nav2 连续通过。 -->
+      <Timeout msec="300000">
+        <SendNav2ThroughPoses
+          goals="-0.45;-0.63;0.0|5.44;-1.68;0.0|7.13;0.10;0.0|4.85;3.74;0.0|0.55;5.18;0.0"
+          action_name="navigate_through_poses"/>
       </Timeout>
-      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-
-      <!-- 路点 2: (5.44, -1.68)，出发前检查 HP > 150 -->
-      <Inverter>
-        <IsHpLow threshold="150"/>
-      </Inverter>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="5.44;-1.68;0.0"
-                      action_name="navigate_to_pose"/>
-      </Timeout>
-      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-
-      <!-- 路点 3: (7.13, 0.10)，出发前检查 HP > 150 -->
-      <Inverter>
-        <IsHpLow threshold="150"/>
-      </Inverter>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="7.13;0.10;0.0"
-                      action_name="navigate_to_pose"/>
-      </Timeout>
-      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-
-      <!-- 路点 4: (4.85, 3.74)，出发前检查 HP > 150 -->
-      <Inverter>
-        <IsHpLow threshold="150"/>
-      </Inverter>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="4.85;3.74;0.0"
-                      action_name="navigate_to_pose"/>
-      </Timeout>
-      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-
-      <!-- 路点 5: (0.55, 5.18)，出发前检查 HP > 150 -->
-      <Inverter>
-        <IsHpLow threshold="150"/>
-      </Inverter>
-      <Timeout msec="60000">
-        <SendNav2Goal goal="0.55;5.18;0.0"
-                      action_name="navigate_to_pose"/>
-      </Timeout>
-      <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
-    </Sequence>
+    </ReactiveSequence>
   </BehaviorTree>
 
 
@@ -213,7 +173,8 @@
               <PublishAutoAim value="0"
                               duration="0"
                               topic_name="auto_aim_switch"/>
-              <PublishSpinSpeed spin_speed="0"
+              <!-- 行进旋转由 fake_vel_transform 与导航平移合成。 -->
+              <PublishSpinSpeed spin_speed="2.2"
                                 duration="0"
                                 topic_name="cmd_spin"/>
             </Sequence>

@@ -31,13 +31,13 @@ public:
 
   static BT::PortsList providedPorts()
   {
-    return {BT::InputPort<std::string>("goal"), BT::InputPort<std::string>("action_name")};
+    return {BT::InputPort<std::string>("goals"), BT::InputPort<std::string>("action_name")};
   }
 
   BT::NodeStatus onStart() override
   {
-    require(getInput<std::string>("action_name").value() == "navigate_to_pose", "Nav2 action");
-    goals.push_back(getInput<std::string>("goal").value());
+    require(getInput<std::string>("action_name").value() == "navigate_through_poses", "Multi-pose Nav2 action");
+    goals.push_back(getInput<std::string>("goals").value());
     return hold ? BT::NodeStatus::RUNNING : finish();
   }
 
@@ -96,10 +96,14 @@ int main(int argc, char ** argv)
       return ready_after(tf_failures);
     }, {BT::InputPort<std::string>("map_frame"), BT::InputPort<std::string>("base_frame"),
       BT::InputPort<double>("timeout")});
-    factory.registerSimpleCondition("IsNav2Ready", [&](BT::TreeNode &) {
+    factory.registerSimpleCondition("IsNav2Ready", [&](BT::TreeNode & node) {
+      require(node.getInput<bool>("through_poses").value(), "Multi-pose readiness type");
+      require(node.getInput<std::string>("action_name").value() == "navigate_through_poses",
+        "Multi-pose readiness name");
       return ready_after(nav2_failures);
-    }, {BT::InputPort<std::string>("action_name"), BT::InputPort<double>("timeout")});
-    factory.registerNodeType<TestNav>("SendNav2Goal");
+    }, {BT::InputPort<std::string>("action_name"), BT::InputPort<double>("timeout"),
+      BT::InputPort<bool>("through_poses", false, "Select multi-pose type")});
+    factory.registerNodeType<TestNav>("SendNav2ThroughPoses");
 
     std::vector<Output> outputs;
     auto publisher = [&](const std::string & id, const std::string & topic,
@@ -162,14 +166,12 @@ int main(int argc, char ** argv)
         TestNav::halts = 0;
         TestNav::hold = false;
       };
-    const std::vector<std::string> forward = {
-      "-0.45;-0.63;0.0", "5.44;-1.68;0.0", "7.13;0.10;0.0",
-      "4.85;3.74;0.0", "0.55;5.18;0.0"};
-    const std::vector<std::string> retreat = {
-      "0.55;5.18;0.0", "4.85;3.74;0.0", "7.13;0.10;0.0",
-      "5.44;-1.68;0.0", "-0.45;-0.63;0.0"};
-    auto round_route = forward;
-    round_route.insert(round_route.end(), retreat.begin(), retreat.end());
+    // 每条字符串对应一次多点请求；比较整串同时检查点数与顺序。
+    const std::string forward =
+      "-0.45;-0.63;0.0|5.44;-1.68;0.0|7.13;0.10;0.0|4.85;3.74;0.0|0.55;5.18;0.0";
+    const std::string retreat =
+      "0.55;5.18;0.0|4.85;3.74;0.0|7.13;0.10;0.0|5.44;-1.68;0.0|-0.45;-0.63;0.0";
+    const std::vector<std::string> round_route = {forward, retreat};
     auto check_stop = [&] {
         require(last("auto_aim_switch") == 0 && last("cmd_spin") == 0 &&
           last("gimbal_scan_cmd") == 0 && last("cmd_vel") == 0, "Root safe stop");
@@ -202,7 +204,7 @@ int main(int argc, char ** argv)
     require(outputs.size() == waiting_stops + 3, "Wait heartbeats without repeated Twist");
     set_game(4);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Reached combat");
-    require(TestNav::goals == forward, "Forward waypoints, including 65535 game time");
+    require(TestNav::goals == std::vector<std::string>({forward}), "Forward waypoints, including 65535 game time");
     require(last("cmd_spin") == 7 && last("gimbal_scan_cmd") == 1 &&
       last("auto_aim_switch") == 1, "Combat outputs");
     set_hp(150);
@@ -212,14 +214,14 @@ int main(int argc, char ** argv)
       last("auto_aim_switch") == 0, "Recover outputs");
     set_hp(400);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Recover restarts navigation");
-    require(TestNav::goals.size() == round_route.size() + forward.size() &&
-      TestNav::goals[round_route.size()] == forward[0],
+    require(TestNav::goals.size() == round_route.size() + 1 &&
+      TestNav::goals[round_route.size()] == forward,
       "Next round starts at first forward waypoint");
     outputs.clear();
     set_game(5);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Game end closes whole tree");
     require(outputs.size() == 4 &&
-      TestNav::goals.size() == round_route.size() + forward.size(),
+      TestNav::goals.size() == round_route.size() + 1,
       "One safe stop, no next loop");
     check_stop();
 
@@ -228,7 +230,7 @@ int main(int argc, char ** argv)
     set_hp(0);
     tree = factory.createTree("competition_phase1", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "HP zero enters recover");
-    require(TestNav::goals == retreat, "HP zero goes through retreat, not direct recover");
+    require(TestNav::goals == std::vector<std::string>({retreat}), "HP zero goes through retreat, not direct recover");
     set_game(5);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "HP zero game end stops");
     check_stop();
@@ -238,16 +240,22 @@ int main(int argc, char ** argv)
     set_hp(400);
     TestNav::hold = true;
     tree = factory.createTree("competition_phase1", local);
-    require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "First goal active");
+    require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "First route active");
+    require(last("cmd_spin") == 2.2, "Forward spin speed");
+    outputs.clear();
+    require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Continuous route heartbeat");
+    for (const auto & output : outputs) {
+      require(output.topic != "cmd_vel", "No intermediate stop while following route");
+    }
     set_hp(150);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING &&
-      TestNav::goals == std::vector<std::string>({forward[0]}) && TestNav::halts == 0,
-      "HP drop does not cancel active waypoint");
+      TestNav::goals == round_route && TestNav::halts == 1,
+      "Low HP halts forward route and starts retreat");
+    require(last("cmd_spin") == 2.2 && last("auto_aim_switch") == 0,
+      "Retreat spins while skipping combat");
     TestNav::hold = false;
-    require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Low HP between waypoints");
-    require(TestNav::goals == std::vector<std::string>({
-      forward[0], retreat[0], retreat[1], retreat[2], retreat[3], retreat[4]}),
-      "Skip remaining forward waypoints and combat");
+    require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Retreat completes into recovery");
+    require(TestNav::goals == round_route, "Each route is submitted once");
     set_game(5);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Low HP exit stops");
 
@@ -255,7 +263,7 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     TestNav::on_success = [&](const std::string & goal) {
-        if (goal == forward.back()) {
+        if (goal == forward) {
           set_hp(150);
         }
       };
@@ -278,13 +286,13 @@ int main(int argc, char ** argv)
     TestNav::failures = 1;
     tree = factory.createTree("competition_phase1", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Failure starts backoff");
-    require(TestNav::goals == std::vector<std::string>({forward[0]}), "One failed goal");
+    require(TestNav::goals == std::vector<std::string>({forward}), "One failed goal");
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING && TestNav::goals.size() == 1,
       "No immediate resend");
     std::this_thread::sleep_for(std::chrono::milliseconds(2050));
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Retry reaches combat");
     require(TestNav::goals == std::vector<std::string>({
-      forward[0], forward[0], forward[1], forward[2], forward[3], forward[4]}),
+      forward, forward}),
       "Retry restarts full route");
     set_game(5);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Backoff case stops");
@@ -298,7 +306,7 @@ int main(int argc, char ** argv)
     set_game(5);
     outputs.clear();
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Game end cancels backoff");
-    require(TestNav::goals == std::vector<std::string>({forward[0]}),
+    require(TestNav::goals == std::vector<std::string>({forward}),
       "No retry after game end");
     check_stop();
 
@@ -317,14 +325,14 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     TestNav::on_success = [&](const std::string & goal) {
-        if (goal == forward.back()) {
+        if (goal == forward) {
           set_game(5);
         }
       };
     tree = factory.createTree("competition_phase1", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS,
       "Combat FAILURE propagates to root safe stop");
-    require(TestNav::goals == forward, "Combat FAILURE never retries navigation");
+    require(TestNav::goals == std::vector<std::string>({forward}), "Combat FAILURE never retries navigation");
     check_stop();
 
     std::cout << "Competition phase loop: all checks passed\n";
