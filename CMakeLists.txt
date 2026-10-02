@@ -122,6 +122,12 @@ endforeach()
 
 if(BUILD_TESTING)
   enable_testing()
+  ament_auto_add_executable(test_is_nav2_ready test/test_is_nav2_ready.cpp)
+  target_link_libraries(test_is_nav2_ready is_nav2_ready)
+  add_test(NAME nav2_ready_types COMMAND test_is_nav2_ready)
+  set_tests_properties(nav2_ready_types PROPERTIES TIMEOUT 10
+    ENVIRONMENT "ROS_DOMAIN_ID=189;ROS_LOCALHOST_ONLY=1;ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/test_ros_logs")
+
   ament_auto_add_executable(test_competition_conditions test/test_competition_conditions.cpp)
   add_test(NAME competition_conditions
     COMMAND test_competition_conditions $<TARGET_FILE:competition_conditions>)

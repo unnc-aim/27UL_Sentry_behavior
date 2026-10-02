@@ -7,6 +7,7 @@
 #include "behaviortree_cpp/condition_node.h"
 #include "behaviortree_ros2/ros_node_params.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/action/navigate_through_poses.hpp"  // 多点导航使用独立的 Action 类型。
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
@@ -22,6 +23,7 @@ class IsNav2ReadyCondition : public BT::ConditionNode
 {
 public:
   using NavigateToPose = nav2_msgs::action::NavigateToPose;
+  using NavigateThroughPoses = nav2_msgs::action::NavigateThroughPoses;
 
   IsNav2ReadyCondition(
     const std::string & name, const BT::NodeConfig & config, const BT::RosNodeParams & params);
@@ -33,7 +35,7 @@ public:
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::CallbackGroup::SharedPtr callback_group_;
-  rclcpp_action::Client<NavigateToPose>::SharedPtr client_;
+  std::shared_ptr<rclcpp_action::ClientBase> client_;  // 共用就绪查询接口，实际客户端保持具体消息类型。
   std::string action_name_;
   rclcpp::Time start_time_;
 };
