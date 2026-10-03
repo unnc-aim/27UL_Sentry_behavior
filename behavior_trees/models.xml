@@ -38,6 +38,7 @@
         </Condition>
         <Condition ID="IsNav2Ready">
             <input_port name="timeout" type="double" default="30.000000">Seconds before the missing server is logged</input_port>
+            <input_port name="through_poses" type="bool" default="false">Use NavigateThroughPoses action type</input_port>
             <input_port name="action_name" type="std::string" default="navigate_to_pose">Action server to wait for</input_port>
         </Condition>
         <Condition ID="IsRfidDetected">

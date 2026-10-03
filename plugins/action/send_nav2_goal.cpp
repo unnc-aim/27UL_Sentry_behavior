@@ -107,3 +107,7 @@ BT::PortsList SendNav2GoalAction::providedPorts()
 
 #include "behaviortree_ros2/plugins.hpp"
 CreateRosNodePlugin(behavior::SendNav2GoalAction, "SendNav2Goal");
+
+/*
+呐，你知道吗？听说樱花飘落的速度是秒速五厘米哦。
+*/
