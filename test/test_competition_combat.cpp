@@ -40,7 +40,8 @@ int main(int argc, char ** argv)
     auto publisher = [&](const std::string & id, const std::string & topic,
         const std::string & value_port, BT::PortsList ports) {
         ports.insert(BT::InputPort<std::string>("topic_name"));
-        ports.insert(BT::InputPort<int>("duration", 0));
+        // 三参数重载依次指定名称、整数默认值、说明，避免把 0 解释为文本指针。
+        ports.insert(BT::InputPort<int>("duration", 0, "Publish duration in milliseconds"));
         factory.registerSimpleAction(id, [&, topic, value_port](BT::TreeNode & node) {
           require(node.getInput<std::string>("topic_name").value() == topic, "Output topic");
           require(node.getInput<int>("duration").value() == 0, "One publish per tick");
@@ -49,6 +50,7 @@ int main(int argc, char ** argv)
             return BT::NodeStatus::FAILURE;
           }
           if (topic == "cmd_vel") {
+            require(node.getInput<double>("v_x").value() == 0, "Stop forward velocity");  // getInput<double> 按浮点数读取端口。
             require(node.getInput<double>("v_y").value() == 0, "Stop lateral velocity");
             require(node.getInput<double>("v_yaw").value() == 0, "Stop angular velocity");
           }
@@ -108,7 +110,10 @@ int main(int argc, char ** argv)
     global->set("referee_gameStatus", game);
     outputs.clear();
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Default HP/heat, progress only");
-    require(count("cmd_vel") == 1 && last("cmd_vel") == 0, "Entry stop exactly once");
+    // 首次 tick 同时执行入口和循环，因此应各发布一次零 Twist。
+    require(count("cmd_vel") == 2 && last("cmd_vel") == 0, "Entry and loop refresh velocity");
+    require(outputs[0].topic == "cmd_spin" && outputs[1].topic == "cmd_vel",
+      "Entry publishes spin before velocity");  // 下标 0、1 核对序列的前两次发布。
     require(last("cmd_spin") == 7 && last("gimbal_scan_cmd") == 1, "Combat constants");
     require(last("auto_aim_switch") == 1, "Initial aim enabled");
     hp.current_hp = 151;
@@ -120,7 +125,10 @@ int main(int argc, char ** argv)
       global->set("referee_robotHeat", heat);
       outputs.clear();
       require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Heat does not end combat");
-      require(outputs.size() == 3 && count("cmd_vel") == 0, "Three heartbeats, no Twist");
+      // 热量仅影响自瞄；每个运行 tick 仍刷新 spin、Twist、扫描、自瞄四项。
+      require(outputs.size() == 4 && count("cmd_vel") == 1, "Four outputs each tick");
+      require(outputs[0].topic == "cmd_spin" && outputs[1].topic == "cmd_vel" &&
+        last("cmd_spin") == 7 && last("cmd_vel") == 0, "Ordered stationary spin refresh");
       require(count("cmd_spin") == 1 && count("gimbal_scan_cmd") == 1 &&
         count("auto_aim_switch") == 1, "Each output repeats every tick");
       require(last("auto_aim_switch") == aims[i], "Same-tick heat output");
@@ -130,13 +138,15 @@ int main(int argc, char ** argv)
     outputs.clear();
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Low HP advances to retreat");
     require(outputs.size() == 1 && last("auto_aim_switch") == 0, "Explicit low-HP aim off");
+    require(count("cmd_vel") == 0, "Low HP ends stationary velocity refresh");  // 退出战斗后把速度发布交给下一阶段。
     hp.current_hp = 400;
     global->set("referee_robotPerformance", hp);
     heat.shooter_17mm_barrel_heat = 240;
     global->set("referee_robotHeat", heat);
     outputs.clear();
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Re-enter hot combat");
-    require(last("auto_aim_switch") == 0 && count("cmd_vel") == 1, "Hot entry and stop");
+    require(last("auto_aim_switch") == 0 && count("cmd_vel") == 2,
+      "Hot entry still refreshes stationary velocity");  // 过热时仍执行入口和循环两次速度刷新。
     game.game_progress = 5;
     hp.current_hp = 0;
     global->set("referee_gameStatus", game);
@@ -144,6 +154,7 @@ int main(int argc, char ** argv)
     outputs.clear();
     require(tree.tickExactlyOnce() == BT::NodeStatus::FAILURE, "Game end wins over low HP");
     require(outputs.size() == 1 && last("auto_aim_switch") == 0, "Explicit game-end aim off");
+    require(count("cmd_vel") == 0, "Game end stops combat velocity refresh");  // 最终停车由外层停止子树负责。
     game.game_progress = 4;
     hp.current_hp = 400;
     heat.shooter_17mm_barrel_heat = 100;

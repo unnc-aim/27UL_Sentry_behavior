@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/action/pub_nav2_goal.hpp"
+#include "behavior/plugins/action/pub_nav2_goal.hpp"
 
-#include "pb2025_sentry_behavior/custom_types.hpp"
+#include "behavior/custom_types.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 PubNav2GoalAction::PubNav2GoalAction(
@@ -48,7 +48,7 @@ BT::PortsList PubNav2GoalAction::providedPorts()
   return providedBasicPorts(additional_ports);
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::PubNav2GoalAction, "PubNav2Goal");
+CreateRosNodePlugin(behavior::PubNav2GoalAction, "PubNav2Goal");

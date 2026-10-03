@@ -1,7 +1,8 @@
 ISSUES.md
 MIGRATION_PLAN.md
 PHASE7_REVIEW_PLAN.md
-test/
+test/*
+!test/test_is_nav2_ready.cpp
 behavior_trees/competition_test_*.xml
 params/sentry_behavior_*_test.yaml
 .vscode

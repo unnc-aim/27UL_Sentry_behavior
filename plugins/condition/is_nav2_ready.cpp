@@ -1,6 +1,6 @@
-#include "pb2025_sentry_behavior/plugins/condition/is_nav2_ready.hpp"
+#include "behavior/plugins/condition/is_nav2_ready.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsNav2ReadyCondition::IsNav2ReadyCondition(
@@ -12,8 +12,16 @@ IsNav2ReadyCondition::IsNav2ReadyCondition(
   }
 
   getInput("action_name", action_name_);
+  bool through_poses = false;  // 默认沿用单点 Action，兼容已有 XML。
+  getInput("through_poses", through_poses);
   callback_group_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-  client_ = rclcpp_action::create_client<NavigateToPose>(node_, action_name_, callback_group_);
+  if (through_poses) {
+    client_ = rclcpp_action::create_client<NavigateThroughPoses>(
+      node_, action_name_, callback_group_);  // 名称与类型一起匹配多点服务。
+  } else {
+    client_ = rclcpp_action::create_client<NavigateToPose>(
+      node_, action_name_, callback_group_);
+  }
 
   start_time_ = node_->now();
 }
@@ -22,6 +30,7 @@ BT::PortsList IsNav2ReadyCondition::providedPorts()
 {
   return {
     BT::InputPort<std::string>("action_name", "navigate_to_pose", "Action server to wait for"),
+    BT::InputPort<bool>("through_poses", false, "Use NavigateThroughPoses action type"),
     BT::InputPort<double>("timeout", 30.0, "Seconds before the missing server is logged"),
   };
 }
@@ -50,7 +59,7 @@ BT::NodeStatus IsNav2ReadyCondition::tick()
   return BT::NodeStatus::FAILURE;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
-CreateRosNodePlugin(pb2025_sentry_behavior::IsNav2ReadyCondition, "IsNav2Ready");
+CreateRosNodePlugin(behavior::IsNav2ReadyCondition, "IsNav2Ready");

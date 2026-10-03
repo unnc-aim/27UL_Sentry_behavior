@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(pb2025_sentry_behavior)
+project(behavior)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,15 +24,15 @@ ament_auto_find_build_dependencies()
 ## Build ##
 ###########
 
-ament_auto_add_executable(pb2025_sentry_behavior_server src/pb2025_sentry_behavior_server.cpp)
+ament_auto_add_executable(behavior_server src/behavior_server.cpp)
 
-ament_auto_add_library(action_client SHARED
-  src/pb2025_sentry_behavior_client.cpp
+ament_auto_add_library(behavior_action_client SHARED
+  src/behavior_client.cpp
 )
 
-rclcpp_components_register_node(action_client
-  PLUGIN pb2025_sentry_behavior::SentryBehaviorClient
-  EXECUTABLE pb2025_sentry_behavior_client
+rclcpp_components_register_node(behavior_action_client
+  PLUGIN behavior::SentryBehaviorClient
+  EXECUTABLE behavior_client
 )
 
 ####### Conditions #######
@@ -122,6 +122,12 @@ endforeach()
 
 if(BUILD_TESTING)
   enable_testing()
+  ament_auto_add_executable(test_is_nav2_ready test/test_is_nav2_ready.cpp)
+  target_link_libraries(test_is_nav2_ready is_nav2_ready)
+  add_test(NAME nav2_ready_types COMMAND test_is_nav2_ready)
+  set_tests_properties(nav2_ready_types PROPERTIES TIMEOUT 10
+    ENVIRONMENT "ROS_DOMAIN_ID=189;ROS_LOCALHOST_ONLY=1;ROS_LOG_DIR=${CMAKE_CURRENT_BINARY_DIR}/test_ros_logs")
+
   ament_auto_add_executable(test_competition_conditions test/test_competition_conditions.cpp)
   add_test(NAME competition_conditions
     COMMAND test_competition_conditions $<TARGET_FILE:competition_conditions>)

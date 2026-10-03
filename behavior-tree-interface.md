@@ -28,7 +28,7 @@ flowchart LR
 
 | 组件 | 职责 | 不应承担的职责 |
 | --- | --- | --- |
-| `pb2025_sentry_behavior` | 根据比赛状态和输入选择行为，发送高层动作指令 | 直接控制电机、绕过底盘仲裁 |
+| `behavior` | 根据比赛状态和输入选择行为，发送高层动作指令 | 直接控制电机、绕过底盘仲裁 |
 | `pb2025_sentry_nav` | 定位、路径规划、速度坐标转换 | 决定比赛策略 |
 | `fake_vel_transform` | 将导航速度转换为底盘可接收的 `TwistStamped` | 决定是否允许运动 |
 | `universal_controller` | 仲裁遥控、导航、扫描、自瞄并下发硬件命令 | 比赛层任务规划 |
@@ -156,14 +156,57 @@ action type: btcpp_ros2_interfaces/action/ExecuteTree
 goal field: target_tree
 ```
 
-首个静态实车测试树为 `stationary_test`：
+当前 ROS 包为 `behavior`。启动文件创建 `behavior_server` 和
+`behavior_client` 两个节点，分别运行同名可执行文件。YAML 顶层节点键与这两个
+节点名对应；插件和行为树资源分别从 `behavior/bt_plugins` 和
+`behavior/behavior_trees` 加载。Action 名沿用 `/pb2025_sentry_behavior`。
 
-```text
-behavior tree: behavior_trees/stationary_test.xml
-parameters: params/sentry_behavior_stationary_test.yaml
+在工作区完成编译并加载环境：
+
+```bash
+cd /home/soyo/sentry_ws
+source /opt/ros/humble/setup.bash
+source install/setup.bash
+colcon build --paths src/behavior --packages-select behavior \
+  --cmake-args -DBUILD_TESTING=OFF
+source install/setup.bash
 ```
 
-该树的设计目标是：底盘零速度、外部 spin 为零、自动瞄准发射门控关闭；在裁判开赛或 `/manual_start=1` 时启动云台扫描。
+默认配置执行 `competition_phase1`：
+
+```bash
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py
+```
+
+通过 `params_file` 选择测试配置：
+
+```bash
+ros2 launch behavior pb2025_sentry_behavior_launch_new.py \
+  params_file:=/home/soyo/sentry_ws/src/behavior/params/sentry_behavior_conditions_test.yaml
+```
+
+| 参数文件 | 执行的行为树 | 用途 |
+| --- | --- | --- |
+| `sentry_behavior_phase1.yaml` | `competition_phase1` | 完整流程 |
+| `sentry_behavior_conditions_test.yaml` | `competition_test_conditions` | 观察血量与热量判断 |
+| `sentry_behavior_combat_test.yaml` | `competition_test_combat` | 战斗阶段 |
+| `sentry_behavior_retreat_test.yaml` | `competition_test_retreat` | 撤退阶段 |
+| `sentry_behavior_recover_test.yaml` | `competition_test_recover` | 恢复阶段 |
+
+四个测试配置通过 `/manual_start` 控制。启动测试：
+
+```bash
+ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
+```
+
+撤销启动条件：
+
+```bash
+ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 0}'
+```
+
+`1` 启动测试，`0` 撤销启动条件。条件测试用于观察输入和判断结果；战斗、撤退、
+恢复测试会发布控制命令。完整流程按裁判比赛状态运行。
 
 ## 9. 第一次实车联调记录
 
@@ -173,7 +216,7 @@ parameters: params/sentry_behavior_stationary_test.yaml
 | --- | --- |
 | 代码版本 | 工作区提交、行为树子模块提交、参数文件名 |
 | 运行前置条件 | 遥控连接状态、是否急停、导航模式和自瞄模式开关位置 |
-| 行为树状态 | Action 是否接收 `stationary_test`，服务器日志和反馈 |
+| 行为树状态 | Action 是否接收所选行为树，服务器日志和反馈 |
 | 云台扫描 | `/gimbal_scan_cmd` 的 `ros2 topic hz`、云台运动视频或关节反馈 |
 | 自瞄 | `/auto_aim_switch` 与 `/sp_vision/autoaim_command` 的当前值和频率 |
 | 底盘静止 | `/cmd_vel_nav2_result`、`/cmd_vel`、`/chassis_command` 的零值证据 |

@@ -1,6 +1,6 @@
-#include "pb2025_sentry_behavior/plugins/condition/is_manual_start.hpp"
+#include "behavior/plugins/condition/is_manual_start.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsManualStartCondition::IsManualStartCondition(
@@ -29,10 +29,10 @@ BT::NodeStatus IsManualStartCondition::checkManualStart()
   return msg->data >= start_value ? BT::NodeStatus::SUCCESS : BT::NodeStatus::FAILURE;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsManualStartCondition>("IsManualStart");
+  factory.registerNodeType<behavior::IsManualStartCondition>("IsManualStart");
 }

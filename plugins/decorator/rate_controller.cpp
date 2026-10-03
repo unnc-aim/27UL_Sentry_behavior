@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/decorator/rate_controller.hpp"
+#include "behavior/plugins/decorator/rate_controller.hpp"
 
 #include <chrono>
 #include <string>
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 RateController::RateController(const std::string & name, const BT::NodeConfiguration & conf)
@@ -73,10 +73,10 @@ BT::NodeStatus RateController::tick()
   return status();
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::RateController>("RateController");
+  factory.registerNodeType<behavior::RateController>("RateController");
 }

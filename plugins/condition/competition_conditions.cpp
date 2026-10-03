@@ -1,11 +1,11 @@
-#include "pb2025_sentry_behavior/plugins/condition/competition_conditions.hpp"
+#include "behavior/plugins/condition/competition_conditions.hpp"
 
 #include "behaviortree_cpp/bt_factory.h"
 #include "dji_referee_protocol/msg/robot_heat.hpp"
 #include "dji_referee_protocol/msg/robot_performance.hpp"
 #include "rclcpp/rclcpp.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 IsHpLow::IsHpLow(const std::string & name, const BT::NodeConfig & config)
@@ -33,6 +33,13 @@ BT::NodeStatus IsHpLow::tick()
   // Match the Python initial HP before the first referee message.
   const int hp = msg ? msg->current_hp : 400;
   const bool low = hp <= threshold.value();
+  if (hp != previous_hp_ || threshold.value() != previous_threshold_) {
+    RCLCPP_INFO(
+      rclcpp::get_logger("IsHpLow"), "%s hp=%d threshold=%d hp_low=%d", name().c_str(), hp,
+      threshold.value(), low ? 1 : 0);
+    previous_hp_ = hp;
+    previous_threshold_ = threshold.value();
+  }
   if (config().output_ports.count("hp_low")) {
     setOutput("hp_low", low);
   }
@@ -163,11 +170,11 @@ void WaitForRecovery::onHalted()
   started_at_ = {};
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::IsHpLow>("IsHpLow");
-  factory.registerNodeType<pb2025_sentry_behavior::TrackHeat>("TrackHeat");
-  factory.registerNodeType<pb2025_sentry_behavior::WaitForRecovery>("WaitForRecovery");
+  factory.registerNodeType<behavior::IsHpLow>("IsHpLow");
+  factory.registerNodeType<behavior::TrackHeat>("TrackHeat");
+  factory.registerNodeType<behavior::WaitForRecovery>("WaitForRecovery");
 }

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/decorator/tick_after_timeout_node.hpp"
+#include "behavior/plugins/decorator/tick_after_timeout_node.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 TickAfterTimeout::TickAfterTimeout(const std::string & name, const BT::NodeConfig & conf)
@@ -53,10 +53,10 @@ BT::NodeStatus TickAfterTimeout::tick()
   return child_status;
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_cpp/bt_factory.h"
 BT_REGISTER_NODES(factory)
 {
-  factory.registerNodeType<pb2025_sentry_behavior::TickAfterTimeout>("TickAfterTimeout");
+  factory.registerNodeType<behavior::TickAfterTimeout>("TickAfterTimeout");
 }

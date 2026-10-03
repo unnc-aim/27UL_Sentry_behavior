@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "pb2025_sentry_behavior/plugins/action/send_nav2_through_poses.hpp"
+#include "behavior/plugins/action/send_nav2_through_poses.hpp"
 
-#include "pb2025_sentry_behavior/custom_types.hpp"
+#include "behavior/custom_types.hpp"
 
-namespace pb2025_sentry_behavior
+namespace behavior
 {
 
 SendNav2ThroughPosesAction::SendNav2ThroughPosesAction(
@@ -97,17 +97,21 @@ BT::NodeStatus SendNav2ThroughPosesAction::onFailure(BT::ActionNodeErrorCode err
 
 BT::PortsList SendNav2ThroughPosesAction::providedPorts()
 {
+  // 端口登记表：声明本节点在 XML 里可用的属性。
+  // XML 中 goals="..." 为固定值，goals="{key}" 则从黑板 key 取值（可动态更新）。
+  // 三个参数：端口名 / 默认值（空串表示可省略）/ 给 Groot 看的说明文字。
   BT::PortsList additional_ports = {
     BT::InputPort<std::string>(
       "goals", "",
       "Waypoints in format 'x1;y1;yaw1|x2;y2;yaw2|...'. "
       "Each pose uses ';' separator, poses separated by '|'."),
   };
+  // 合入基类自带的 action_name 端口，勿直接 return additional_ports
   return providedBasicPorts(additional_ports);
 }
 
-}  // namespace pb2025_sentry_behavior
+}  // namespace behavior
 
 #include "behaviortree_ros2/plugins.hpp"
 CreateRosNodePlugin(
-  pb2025_sentry_behavior::SendNav2ThroughPosesAction, "SendNav2ThroughPoses");
+  behavior::SendNav2ThroughPosesAction, "SendNav2ThroughPoses");
