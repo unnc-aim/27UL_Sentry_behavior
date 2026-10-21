@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 用法：导航和正式行为树启动后，在第三个终端运行本脚本。
-# 对应 competition_phase1：通过实际输出推进阶段，所有控制命令仍由行为树发布。
+# 对应 competition_main：通过实际输出推进阶段，所有控制命令仍由行为树发布。
 set -eo pipefail
 
 SENTRY_WS="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"

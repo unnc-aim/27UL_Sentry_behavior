@@ -40,7 +40,7 @@ script -q -f -e \
   --log-out "$SENTRY_A.log" \
   --log-timing "$SENTRY_A.time" \
   --command 'ros2 launch behavior pb2025_sentry_behavior_launch_new.py \
-    params_file:=/home/soyo/sentry_ws/src/behavior/params/sentry_behavior_phase1.yaml'
+    params_file:=/home/soyo/sentry_ws/src/behavior/params/sentry_behavior_main.yaml'
 ```
 
 3. 终端3跑模拟裁判系统测试指令集：

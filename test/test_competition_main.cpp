@@ -74,7 +74,7 @@ struct Output
 int main(int argc, char ** argv)
 {
   try {
-    require(argc == 7, "Pass condition/game plugins and phase1/combat/retreat/recover XML paths");
+    require(argc == 7, "Pass condition/game plugins and main/combat/retreat/recover XML paths");
     BT::BehaviorTreeFactory factory;
     factory.registerFromPlugin(argv[1]);
     factory.registerFromPlugin(argv[2]);
@@ -181,7 +181,7 @@ int main(int argc, char ** argv)
     set_game(0);
     set_hp(400);
     map_failures = tf_failures = nav2_failures = 1;
-    auto init_tree = factory.createTree("competition_phase1", local);
+    auto init_tree = factory.createTree("competition_main", local);
     for (int i = 0; i < 3; ++i) {
       require(init_tree.tickExactlyOnce() == BT::NodeStatus::RUNNING,
         "INIT remains RUNNING while a readiness gate fails");
@@ -196,7 +196,7 @@ int main(int argc, char ** argv)
     reset();
     set_game(0);
     set_hp(400);
-    auto tree = factory.createTree("competition_phase1", local);
+    auto tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Wait for game");
     require(TestNav::goals.empty(), "No goal before game");
     const auto waiting_stops = outputs.size();
@@ -228,7 +228,7 @@ int main(int argc, char ** argv)
     reset();
     set_game(4);
     set_hp(0);
-    tree = factory.createTree("competition_phase1", local);
+    tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "HP zero enters recover");
     require(TestNav::goals == std::vector<std::string>({retreat}), "HP zero goes through retreat, not direct recover");
     set_game(5);
@@ -239,7 +239,7 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     TestNav::hold = true;
-    tree = factory.createTree("competition_phase1", local);
+    tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "First route active");
     require(last("cmd_spin") == 2.2, "Forward spin speed");
     outputs.clear();
@@ -267,7 +267,7 @@ int main(int argc, char ** argv)
           set_hp(150);
         }
       };
-    tree = factory.createTree("competition_phase1", local);
+    tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING,
       "HP drop on final arrival reaches recover");
     require(TestNav::goals == round_route,
@@ -284,7 +284,7 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     TestNav::failures = 1;
-    tree = factory.createTree("competition_phase1", local);
+    tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Failure starts backoff");
     require(TestNav::goals == std::vector<std::string>({forward}), "One failed goal");
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING && TestNav::goals.size() == 1,
@@ -301,7 +301,7 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     TestNav::failures = 1;
-    tree = factory.createTree("competition_phase1", local);
+    tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Backoff active");
     set_game(5);
     outputs.clear();
@@ -314,7 +314,7 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     TestNav::hold = true;
-    tree = factory.createTree("competition_phase1", local);
+    tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Goal active before game end");
     set_game(5);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Game end cancels navigation");
@@ -329,16 +329,16 @@ int main(int argc, char ** argv)
           set_game(5);
         }
       };
-    tree = factory.createTree("competition_phase1", local);
+    tree = factory.createTree("competition_main", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS,
       "Combat FAILURE propagates to root safe stop");
     require(TestNav::goals == std::vector<std::string>({forward}), "Combat FAILURE never retries navigation");
     check_stop();
 
-    std::cout << "Competition phase loop: all checks passed\n";
+    std::cout << "Competition main loop: all checks passed\n";
     return 0;
   } catch (const std::exception & e) {
-    std::cerr << "Competition phase loop: " << e.what() << '\n';
+    std::cerr << "Competition main loop: " << e.what() << '\n';
     return 1;
   }
 }

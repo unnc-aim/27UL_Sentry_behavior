@@ -172,7 +172,7 @@ colcon build --paths src/behavior --packages-select behavior \
 source install/setup.bash
 ```
 
-默认配置执行 `competition_phase1`：
+默认配置执行 `competition_main`：
 
 ```bash
 ros2 launch behavior pb2025_sentry_behavior_launch_new.py
@@ -187,7 +187,7 @@ ros2 launch behavior pb2025_sentry_behavior_launch_new.py \
 
 | 参数文件 | 执行的行为树 | 用途 |
 | --- | --- | --- |
-| `sentry_behavior_phase1.yaml` | `competition_phase1` | 完整流程 |
+| `sentry_behavior_main.yaml` | `competition_main` | 完整流程 |
 | `sentry_behavior_conditions_test.yaml` | `competition_test_conditions` | 观察血量与热量判断 |
 | `sentry_behavior_combat_test.yaml` | `competition_test_combat` | 战斗阶段 |
 | `sentry_behavior_retreat_test.yaml` | `competition_test_retreat` | 撤退阶段 |

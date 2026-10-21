@@ -152,11 +152,11 @@ if(BUILD_TESTING)
       $<TARGET_FILE:is_manual_start>
       ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_recover.xml
       ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_test_recover.xml)
-  ament_auto_add_executable(test_competition_phase1 test/test_competition_phase1.cpp)
-  add_test(NAME competition_phase1
-    COMMAND test_competition_phase1
+  ament_auto_add_executable(test_competition_main test/test_competition_main.cpp)
+  add_test(NAME competition_main
+    COMMAND test_competition_main
       $<TARGET_FILE:competition_conditions> $<TARGET_FILE:is_game_status>
-      ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_phase1.xml
+      ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_main.xml
       ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_combat.xml
       ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_retreat.xml
       ${CMAKE_CURRENT_SOURCE_DIR}/behavior_trees/competition_recover.xml)
