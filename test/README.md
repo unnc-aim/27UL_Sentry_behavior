@@ -49,7 +49,7 @@ IsHpLow 的 SUCCESS/FAILURE；TrackHeat 在启动和热量迟滞切换时打印 
 中止运行中的 TrackHeat；再次置 1 重新初始化。该入口没有控制发布节点和导航目标，
 只执行条件观察。使用隔离 ROS_DOMAIN_ID，避免模拟裁判消息与真实裁判发布者混用。
 
-当前正式入口仍为 competition_phase1。此调试树的 ForceSuccess 仅用于手动反复
+当前正式入口仍为 competition_main。此调试树的 ForceSuccess 仅用于手动反复
 启动测试，不作为正式比赛根节点模板。
 
 ## 第二批 COMBAT 验证
@@ -108,7 +108,7 @@ ros2 topic pub --once /manual_start std_msgs/msg/Int32 '{data: 1}'
 manual_start=0，应返回 FAILURE。两个出口都会由调试包装发布全零停止输出，
 包括额外的一次零 Twist；调试树不会自动重启或发送撤退导航目标。
 
-正式子树仅在低 HP 时关闭自瞄并交给后续 RETREAT；完整主树 `competition_phase1`
+正式子树仅在低 HP 时关闭自瞄并交给后续 RETREAT；完整主树 `competition_main`
 现已提供比赛结束时的 spin/扫描/底盘安全收口。验证单独的正式比赛 gate 时，将调试 params 的 target_tree
 临时设为 `competition_combat`，先持续发布下列模拟消息，再启动服务与客户端：
 
@@ -188,7 +188,7 @@ ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg
 
 ## 第六批完整比赛循环验证
 
-正式入口为 `competition_phase1`。前进一次提交顺序五点，撤退一次提交逆序五点，
+正式入口为 `competition_main`。前进一次提交顺序五点，撤退一次提交逆序五点，
 两阶段使用 `/navigate_through_poses`，移动 spin 为 2.2rad/s。
 前进期间每次 tick 检查 HP，HP<=150 会停止前进目标、跳过战斗并进入撤退。
 每条路线采用 300s 执行上限；失败后等待 2s，再次提交完整路线。
@@ -201,7 +201,7 @@ ros2 topic pub --once /referee/common/robot_performance dji_referee_protocol/msg
 Hub 沿用现有控制来源选择：导航开启且速度有效时采用导航输入，速度过期后回到遥控输入。
 连续移动与战斗速度刷新均通过现有行为树接口完成；恢复阶段的持续旋转另行处理。
 
-相关检查：`competition_phase1`、`competition_retreat`、`nav2_ready_types`。正赛测试记录每次多点请求，
+相关检查：`competition_main`、`competition_retreat`、`nav2_ready_types`。正赛测试记录每次多点请求，
 检查点序、运行中低血量取消、比赛结束、失败重试和下一轮前进。
 就绪检查采用独立 ROS 域 189。
 
@@ -211,7 +211,7 @@ Hub 沿用现有控制来源选择：导航开启且速度有效时采用导航�
 
 ```bash
 ros2 launch behavior pb2025_sentry_behavior_launch_new.py \
-  params_file:=/home/soyo/sentry_ws/src/behavior/params/sentry_behavior_phase1.yaml
+  params_file:=/home/soyo/sentry_ws/src/behavior/params/sentry_behavior_main.yaml
 ```
 
 每条路线开始时应出现 `Sending 5 poses to NavigateThroughPoses`，

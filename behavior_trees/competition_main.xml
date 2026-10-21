@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4"
-      main_tree_to_execute="competition_phase1">
+      main_tree_to_execute="competition_main">
 
   <!-- =====================================================================
        【架构概览 & 阅读指南】
        
        1. 顶层入口：
-          - competition_phase1 (主树)：负责初始化自检、待机等待开赛、循环执行轮次，
+          - competition_main (主树)：负责初始化自检、待机等待开赛、循环执行轮次，
             以及全局异常时的安全停机兜底。
        
        2. 战术流转调用链：
-          competition_phase1
+          competition_main
             └── competition_round (单轮调度)
-                  ├── phase1_navigate (前进阶段，输出 @forward_outcome)
+                  ├── competition_navigate (前进阶段，输出 @forward_outcome)
                   ├── competition_combat (战斗阶段，到达目标后触发)
                   ├── competition_retreat (撤退阶段，残血或战斗后撤回)
                   └── competition_recover (恢复阶段，基地补血/补弹)
@@ -24,11 +24,11 @@
 
 
   <!-- =====================================================================
-       子树：phase1_init (系统就绪检查)
+       子树：competition_init (系统就绪检查)
        逻辑：按序阻塞确认地图、底盘坐标变换、Nav2 导航栈可用。
              任一节点失败将导致该子树失败，由外层触发重试循环。
   ===================================================================== -->
-  <BehaviorTree ID="phase1_init">
+  <BehaviorTree ID="competition_init">
     <Sequence>
       <!-- 检查 1: 地图话题接收并等待 5 秒以确保建图/载入稳定 -->
       <IsMapReady topic_name="/map"
@@ -49,10 +49,10 @@
 
 
   <!-- =====================================================================
-       子树：phase1_wait_game (开赛前等待与待机状态保持)
+       子树：competition_wait_game (开赛前等待与待机状态保持)
        逻辑：入场后初始化各执行器，持续保持低速扫描感知，直至裁判系统发出开赛信号。
   ===================================================================== -->
-  <BehaviorTree ID="phase1_wait_game">
+  <BehaviorTree ID="competition_wait_game">
     <Sequence>
       <!-- [初始状态配置] 锁定底盘静止，关闭自瞄/小陀螺，开启云台往复低速扫描 -->
       <PublishGimbalVelocity gimbal_vel_yaw="0.5"
@@ -117,11 +117,11 @@
 
 
   <!-- =====================================================================
-       子树：phase1_navigate_forward (前进巡航路线执行)
+       子树：competition_navigate_forward (前进巡航路线执行)
        逻辑：一次提交五点连续路线，运行期间每次 tick 检查 HP。
              整路线超时 (300s) 或 HP <= 150 时返回 FAILURE，交给外层处理。
   ===================================================================== -->
-  <BehaviorTree ID="phase1_navigate_forward">
+  <BehaviorTree ID="competition_navigate_forward">
     <ReactiveSequence>
       <!-- 每次 tick 先检查 HP；残血时停止当前多点目标。 -->
       <Inverter><IsHpLow threshold="150"/></Inverter>
@@ -136,13 +136,13 @@
 
 
   <!-- =====================================================================
-       子树：phase1_navigate (前进阶段顶层状态机)
+       子树：competition_navigate (前进阶段顶层状态机)
        逻辑：
        - 并发执行：一边监听比赛状态并维持云台扫描，一边推进路径导航。
        - 容错处理：导航失败时根据是残血 (low_hp) 还是路径受阻分别进行状态转移。
        - 产出结果：写入 @forward_outcome ("arrived" 或 "low_hp")。
   ===================================================================== -->
-  <BehaviorTree ID="phase1_navigate">
+  <BehaviorTree ID="competition_navigate">
     <Sequence>
       <!-- 初始化黑板标记 -->
       <SetBlackboard value="unknown"
@@ -187,7 +187,7 @@
             <!-- 决策 A: 正常走完全程 -> 刹车停稳 -> 标记为 arrived -->
             <Sequence>
               <Fallback>
-                <SubTree ID="phase1_navigate_forward"/>
+                <SubTree ID="competition_navigate_forward"/>
                 <!-- 若路线执行失败，先强制发布刹车，再将 FAILURE 向上抛出以触发后续决策 -->
                 <ForceFailure>
                   <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
@@ -227,7 +227,7 @@
   <BehaviorTree ID="competition_round">
     <Sequence>
       <!-- 阶段 1: 执行前进路线 -->
-      <SubTree ID="phase1_navigate"/>
+      <SubTree ID="competition_navigate"/>
 
       <!-- 阶段 2: 根据前进阶段产出的黑板结果分支路由
            - case_1 (arrived): 完整走完路线到达战区，接入战斗子树
@@ -251,19 +251,19 @@
 
 
   <!-- =====================================================================
-       主树入口：competition_phase1
+       主树入口：competition_main
        逻辑：
        - 主干分支：持续初始化 -> 待机开赛 -> 赛时连续循环执行 competition_round。
        - 兜底分支 (Fallback)：主流程中断或比赛结束报错时，切入安全防护程序（熄火停机）。
   ===================================================================== -->
-  <BehaviorTree ID="competition_phase1">
+  <BehaviorTree ID="competition_main">
     <Fallback>
       <!-- 主战术逻辑通道 -->
       <Sequence>
         <!-- 阶段 1: 阻塞式重试初始化（间隔 500ms），直到所有基础设施完全就绪 -->
         <RetryUntilSuccessful num_attempts="-1">
           <Fallback>
-            <SubTree ID="phase1_init"/>
+            <SubTree ID="competition_init"/>
             <ForceFailure>
               <Sleep msec="500"/>
             </ForceFailure>
@@ -271,7 +271,7 @@
         </RetryUntilSuccessful>
 
         <!-- 阶段 2: 待机等待开赛信号 -->
-        <SubTree ID="phase1_wait_game"/>
+        <SubTree ID="competition_wait_game"/>
 
         <!-- 阶段 3: 比赛进行中的无限循环调度
              ReactiveSequence 实时监控比赛状态；比赛结束/终止时立即打断轮次循环 -->

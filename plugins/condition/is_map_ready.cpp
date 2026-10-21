@@ -13,7 +13,7 @@
  * 所有经过时间均使用 node_->now() 所属的 ROS 时钟计算。
  * 收到首条地图并经过 settle_time 秒后成功；其他等待状态返回 FAILURE。
  * timeout 用于选择等待日志的级别，后续检查由外层行为树的重试节点驱动。
- * 当前 competition_phase1 主树在初始化检查失败后等待 500 ms，再次检查。
+ * 当前 competition_main 主树在初始化检查失败后等待 500 ms，再次检查。
  */
 
 #include "behavior/plugins/condition/is_map_ready.hpp"                              // 引入本类声明，供下方定义成员函数。

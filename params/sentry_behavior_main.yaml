@@ -16,4 +16,4 @@ behavior_server:
 behavior_client:
   ros__parameters:
     use_sim_time: false
-    target_tree: competition_phase1
+    target_tree: competition_main

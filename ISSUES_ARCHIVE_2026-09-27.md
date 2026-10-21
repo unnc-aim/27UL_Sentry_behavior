@@ -16,7 +16,7 @@
 - 状态：`待验证`
 - 优先级：`高`
 - 发现日期：2026-09-20
-- 涉及文件：`behavior_trees/competition_phase1.xml`
+- 涉及文件：`behavior_trees/competition_main.xml`
 - 参考实现：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`
 
 ### 问题
@@ -70,7 +70,7 @@ Python 状态机在 Nav2 接受单个航点后，最多等待 60 秒。超时后
 - 状态：`待验证`
 - 优先级：`低`
 - 发现日期：2026-09-21
-- 涉及文件：`behavior_trees/competition_phase1.xml`
+- 涉及文件：`behavior_trees/competition_main.xml`
 - 参考实现：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`（`_ph_navigate` 失败后 `_spin_ros(2.0)` 再重试）
 
 ### 问题
@@ -103,7 +103,7 @@ Python 状态机在 Nav2 接受单个航点后，最多等待 60 秒。超时后
 - 状态：`待处理`
 - 优先级：`低`
 - 发现日期：2026-09-21
-- 涉及文件：`behavior_trees/competition_phase1.xml`
+- 涉及文件：`behavior_trees/competition_main.xml`
 - 参考实现：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`（`REFEREE_TIMEOUT = 300.0`）
 
 ### 问题
@@ -136,7 +136,7 @@ XML 注释只声明了 INIT 超时改为"记录不退出"，未提 `REFEREE_TIME
 - 状态：`待处理`
 - 优先级：`低`
 - 发现日期：2026-09-21
-- 涉及文件：`behavior_trees/competition_phase1.xml`
+- 涉及文件：`behavior_trees/competition_main.xml`
 - 参考实现：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`（`finally` 中 `_scan_off()`）
 
 ### 问题
@@ -170,7 +170,7 @@ XML 注释只声明了 INIT 超时改为"记录不退出"，未提 `REFEREE_TIME
 - 状态：`待处理`
 - 优先级：`低`
 - 发现日期：2026-09-21
-- 涉及文件：`behavior_trees/competition_phase1.xml`、`plugins/condition/is_map_ready.cpp`
+- 涉及文件：`behavior_trees/competition_main.xml`、`plugins/condition/is_map_ready.cpp`
 - 参考实现：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`（三门全过后的 costmap 等待）
 
 ### 问题
@@ -203,7 +203,7 @@ Python 是三个就绪门全部通过后等待 5s 让 costmap 填充；行为树
 - 状态：`待处理`
 - 优先级：`低`
 - 发现日期：2026-09-22
-- 涉及文件：`behavior_trees/competition_phase1.xml`、`plugins/action/send_nav2_goal.cpp`
+- 涉及文件：`behavior_trees/competition_main.xml`、`plugins/action/send_nav2_goal.cpp`
 - 参考实现：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`
 
 ### 问题
@@ -246,7 +246,7 @@ Python 是三个就绪门全部通过后等待 5s 让 costmap 填充；行为树
 - 涉及文件：`plugins/condition/competition_conditions.cpp`、对应头文件、`CMakeLists.txt`、`behavior_trees/competition_test_conditions.xml`、`params/sentry_behavior_conditions_test.yaml`、`test/test_competition_conditions.cpp`。
 - 实现：`IsHpLow` 独立判断 `RobotPerformance.current_hp <= threshold`；`TrackHeat` 使用 `RobotHeat.shooter_17mm_barrel_heat` 和 240/50 迟滞，运行期间返回 RUNNING，输出整数 `aim_allowed`，halt 时清锁存、输出 0。
 - 接口：沿用全局黑板 `referee_robotPerformance` / `referee_robotHeat`；不新增订阅，不依赖 AllowedShoot。消息未到达时复刻 Python 初值 HP=400、热量=0，不增加消息失效策略。
-- 调试：独立入口 `competition_test_conditions`，manual_start=1 启动，0 halt；不发送运动、自瞄或 Nav2 命令。默认 competition_phase1 未改动。
+- 调试：独立入口 `competition_test_conditions`，manual_start=1 启动，0 halt；不发送运动、自瞄或 Nav2 命令。默认 competition_main 未改动。
 - 已验证：XML 语法、黑板键与现有服务器一致、注册名和 params 入口一致、diff 空白检查。
 - 未验证：当前机器执行 cmake 返回 command not found，且未找到 colcon / ROS 构建环境。不能将结构检查视为真实 C++ 编译或插件运行通过。
 - 回归检查已加入 CTest：动态加载真实插件，检查初值、HP 边界、热量迟滞、自定义/非法阈值、父节点 halt 和重入、同 tick 输出顺序。
@@ -383,7 +383,7 @@ BT.CPP 的 `Parallel` 会记录已经返回 SUCCESS 的子节点，并在本轮�
 - 实现：一次性入口零 Twist；spin=7.0、scan=1.0、自瞄按 240/50 迟滞每 tick 重发。HP<=150 返回 SUCCESS；比赛结束优先返回 FAILURE。所有正常流程出口显式关闭自瞄，调试包装另有停止输出。
 - 等价说明：复用 IsGameStatus 并使用 0～65535 剩余时间范围，覆盖 uint16 字段全域，保持 Python 仅检查 game_progress==4 的语义；不改第一阶段的比赛条件。按计划以 5 Hz tick 重发，Python 的 spin/自瞄定时重发约 2 Hz。入口先开自瞄，再在同 tick 按当前热量调整；不悄悄更改入口已过热时先开再关的行为。
 - 接口：复用现有发布节点及消息类型。现有 launch 将 `cmd_vel` 重映射为 `/cmd_vel_nav2_result`，实际停车消息应在后者观察。
-- 调试包装与比赛流程区别：手动 gate 替代比赛 gate，HP 退出或手动停止后执行全零停止输出并结束一轮；不连接尚未迁移的 RETREAT。正式主树入口仍为 competition_phase1。
+- 调试包装与比赛流程区别：手动 gate 替代比赛 gate，HP 退出或手动停止后执行全零停止输出并结束一轮；不连接尚未迁移的 RETREAT。正式主树入口仍为 competition_main。
 - 验证限制：本机仍无 CMake、colcon/ROS；已添加真实 XML + 条件插件 + 记录型发布节点的 CTest，但尚未执行。XML/静态检查不能代替插件加载、实际 ROS topic 或实车验证。外部 halt 清理按原计划留待后续可靠性处理。
 - [ ] 第 1、2 批 CTest 与 ROS 构建通过。
 - [ ] 真实接口输出类型、值、发布间隔和零 Twist 次数符合 `test/README.md`。
@@ -396,7 +396,7 @@ BT.CPP 的 `Parallel` 会记录已经返回 SUCCESS 的子节点，并在本轮�
 - 状态：`已改 XML，待 ROS 验证`
 - 优先级：`中`
 - 发现日期：2026-09-22
-- 涉及文件：`behavior_trees/competition_phase1.xml`、`behavior_trees/competition_combat.xml`
+- 涉及文件：`behavior_trees/competition_main.xml`、`behavior_trees/competition_combat.xml`
 - 预计处理批次：第 6 批完整比赛循环集成
 
 ### 问题
@@ -409,7 +409,7 @@ BT.CPP 的 `Parallel` 会记录已经返回 SUCCESS 的子节点，并在本轮�
 
 第 6 批集成时将比赛循环中仅用于判断 `game_progress == 4` 的 gate 统一为 uint16 全范围 `0～65535`，保持 Python `_game_on()` 的语义。若某处确实需要时间限制，应单独命名并说明用途。
 
-第 6 批已将 WAIT_GAME 和 NAVIGATE 的 gate 以及根部 gate 改为 `0～65535`；COMBAT、RETREAT、RECOVER 原本已用该范围。新增 `competition_phase1` CTest 使用 `stage_remain_time=65535`，但本机未运行 ROS 构建及 CTest。
+第 6 批已将 WAIT_GAME 和 NAVIGATE 的 gate 以及根部 gate 改为 `0～65535`；COMBAT、RETREAT、RECOVER 原本已用该范围。新增 `competition_main` CTest 使用 `stage_remain_time=65535`，但本机未运行 ROS 构建及 CTest。
 实现提交：`d844d08 feat(behavior): integrate competition phase loop`。
 
 ### 验收条件
@@ -451,22 +451,22 @@ BT.CPP 的 `Parallel` 会记录已经返回 SUCCESS 的子节点，并在本轮�
 
 第 6 批在根部 FAILURE 收口路径一次性发布：自瞄 0、spin 0、云台零速度和底盘零 Twist，并确保该分支执行后结束整棵树。将此项设为正式比赛主循环上车前的硬验收条件；在此之前，正式阶段子树只用于短时、隔离的接口检查，常规独立调试使用各自带全零出口的测试树。不要把 `competition_test_recover_stop` 当作正式主树必须加载的调试文件依赖。
 
-第 6 批已在 `competition_phase1` 的根部 `Fallback` 添加上述四项一次性输出；`Repeat` 子树失败时由此收口，不再使用旧的 `KeepRunningUntilFailure/ForceSuccess` 无限循环根节点。新增集成 CTest 检查输出记录和不再发送目标；本机未运行 ROS 构建、CTest 或真实 topic 验证。单独运行 COMBAT/RETREAT/RECOVER 正式子树仍没有该根部保护。
+第 6 批已在 `competition_main` 的根部 `Fallback` 添加上述四项一次性输出；`Repeat` 子树失败时由此收口，不再使用旧的 `KeepRunningUntilFailure/ForceSuccess` 无限循环根节点。新增集成 CTest 检查输出记录和不再发送目标；本机未运行 ROS 构建、CTest 或真实 topic 验证。单独运行 COMBAT/RETREAT/RECOVER 正式子树仍没有该根部保护。
 实现提交：`d844d08 feat(behavior): integrate competition phase loop`。
 
 ### 第三轮补充：结束比赛与新目标的竞态（高，待验证）
 
 裁判比赛结束消息由订阅回调写入全局黑板，行为树在独立线程逐节点 tick（`src/pb2025_sentry_behavior_server.cpp:41-48,163-166`；`/Users/lingdu/Documents/sentry_ws_2/src/BehaviorTree.ROS2/behaviortree_ros2/src/tree_execution_server.cpp:154-163,230-231`）。
 
-若 RECOVER 达到出发条件并重入 NAVIGATE，比赛结束更新恰好落在 NAVIGATE 的 `IsGameStatus` 检查之后、首个 `SendNav2Goal` 的 `async_send_goal` 之前（`behavior_trees/competition_phase1.xml:76-118`），当前 XML 没有在发送前再次检查状态，可能在结束消息已写入后仍发出一个前进目标。下一 tick 的根部比赛门预计会停止、取消目标并发布四项零值；这不能证明从未发出结束后的目标，也不能仅凭节点 halt 证明 Nav2 服务端已确认取消。
+若 RECOVER 达到出发条件并重入 NAVIGATE，比赛结束更新恰好落在 NAVIGATE 的 `IsGameStatus` 检查之后、首个 `SendNav2Goal` 的 `async_send_goal` 之前（`behavior_trees/competition_main.xml:76-118`），当前 XML 没有在发送前再次检查状态，可能在结束消息已写入后仍发出一个前进目标。下一 tick 的根部比赛门预计会停止、取消目标并发布四项零值；这不能证明从未发出结束后的目标，也不能仅凭节点 halt 证明 Nav2 服务端已确认取消。
 
-现有 `test/test_competition_phase1.cpp` 未在该窗口注入状态更新；本机没有 ROS/CTest 环境，尚无运行复现。此项补充本问题的“结束后不发新目标”验收，不记为已确认故障。
+现有 `test/test_competition_main.cpp` 未在该窗口注入状态更新；本机没有 ROS/CTest 环境，尚无运行复现。此项补充本问题的“结束后不发新目标”验收，不记为已确认故障。
 
 ### 第五轮补充：非正常出口与安全发布失败（高，待 ROS 验证）
 
 - 外部取消只调用 `haltTree()`，不会 tick 根部安全分支；Control+C 导致 `rclcpp::ok()` 为 false 时，执行循环直接退出，连该取消路径的 `haltTree()` 也未调用（`/Users/lingdu/Documents/sentry_ws_2/src/BehaviorTree.ROS2/behaviortree_ros2/src/tree_execution_server.cpp:203-289`）。COMBAT 中最后发布的自瞄 1、`spin=7.0` 等输出可能残留；`TrackHeat::onHalted()` 清零黑板不能代替 topic 归零（BT-010）。
 - 条件或发布端口抛异常时，执行服务直接 abort，根部 `Fallback` 无法处理；`TrackHeat` 的具体触发顺序见 BT-008。
-- 根部安全分支本身若有发布节点返回 `FAILURE`，内部 `Sequence` 会跳过后续零指令，外层 `ForceSuccess` 仍返回 `SUCCESS`（`behavior_trees/competition_phase1.xml:155-165`）。当前根部端口是有效字面值，此路径需故障注入；执行结果误报另见 BT-019。
+- 根部安全分支本身若有发布节点返回 `FAILURE`，内部 `Sequence` 会跳过后续零指令，外层 `ForceSuccess` 仍返回 `SUCCESS`（`behavior_trees/competition_main.xml:155-165`）。当前根部端口是有效字面值，此路径需故障注入；执行结果误报另见 BT-019。
 
 上述三项均不能用正常比赛结束时的四项归零测试代替；对应待测-05 至待测-07 归档在 BT-022。
 
@@ -633,7 +633,7 @@ Python 的 `hp_snapshot` 只在当前 HP 低于已有快照时更新，实际保
 - 状态：`已按原优先级集成，待 ROS 验证`
 - 优先级：`低`
 - 发现日期：2026-09-26
-- 涉及文件：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`、`behavior_trees/competition_phase1.xml`
+- 涉及文件：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`、`behavior_trees/competition_main.xml`
 
 ### 问题
 
@@ -656,13 +656,13 @@ Python 的 `_ph_navigate()` 在导航未完成后先判断 `HP <= 150` 并进入
 - 状态：`待测试`（退出原因混淆暂不更改；安全发布失败待验证）
 - 优先级：`高`（第五轮发现安全分支发布失败时的误报；原退出原因混淆为低）
 - 发现日期：2026-09-26
-- 涉及文件：`behavior_trees/competition_phase1.xml`、`plugins/action/pub_gimbal_velocity.cpp`
+- 涉及文件：`behavior_trees/competition_main.xml`、`plugins/action/pub_gimbal_velocity.cpp`
 
 ### 现状与影响
 
 主树用 `Fallback` 将主分支的所有 `FAILURE` 交给同一套安全停止输出，再由 `ForceSuccess` 以 `SUCCESS` 结束。因此树结果本身不能区分比赛结束与阶段故障。INIT 未就绪时现在经异步重试保持 `RUNNING`，WAIT_GAME 正常等待也保持 `RUNNING`，但不能据此断言主分支只会因比赛结束失败：例如云台速度节点遇到无效范围时 `setMessage()` 返回 `false`，发布节点会返回 `FAILURE`，而非抛异常。真正抛出的异常不会经过这条 `Fallback`，另参见 BT-008。
 
-第五轮补充：若根部四项安全发布中任一项返回 `FAILURE`，内部 `Sequence` 停在该项，后续零指令不发送；`ForceSuccess` 仍使树返回 `SUCCESS`（`behavior_trees/competition_phase1.xml:155-165`）。这会把未完成的安全停止误报为成功。正式根树使用有效字面端口，目前只有结构证据，需注入发布失败验证；输出安全性由 BT-013 跟踪，测试归 BT-022 待测-07。
+第五轮补充：若根部四项安全发布中任一项返回 `FAILURE`，内部 `Sequence` 停在该项，后续零指令不发送；`ForceSuccess` 仍使树返回 `SUCCESS`（`behavior_trees/competition_main.xml:155-165`）。这会把未完成的安全停止误报为成功。正式根树使用有效字面端口，目前只有结构证据，需注入发布失败验证；输出安全性由 BT-013 跟踪，测试归 BT-022 待测-07。
 
 ### 后续处理
 
@@ -675,7 +675,7 @@ Python 的 `_ph_navigate()` 在导航未完成后先判断 `HP <= 150` 并进入
 - 状态：`已记录，暂不更改`
 - 优先级：`低`
 - 发现日期：2026-09-26
-- 涉及文件：`behavior_trees/competition_phase1.xml`、`plugins/condition/is_map_ready.cpp`、`plugins/condition/is_tf_ready.cpp`、`plugins/condition/is_nav2_ready.cpp`
+- 涉及文件：`behavior_trees/competition_main.xml`、`plugins/condition/is_map_ready.cpp`、`plugins/condition/is_tf_ready.cpp`、`plugins/condition/is_nav2_ready.cpp`
 - 参考实现：`/Users/lingdu/Documents/sentry_ws_2/scripts/competition_controller.py`（`_ph_init`）
 
 ### 差异与影响
@@ -693,7 +693,7 @@ Python 等待地图和 TF 共用约 120 秒就绪期限，Nav2 action server 另
 - 状态：`已记录，暂不修改测试`
 - 优先级：`低`
 - 发现日期：2026-09-26
-- 涉及文件：`behavior_trees/competition_phase1.xml`、`test/test_competition_phase1.cpp`
+- 涉及文件：`behavior_trees/competition_main.xml`、`test/test_competition_main.cpp`
 
 ### 问题与影响
 
@@ -780,21 +780,21 @@ Python 等待地图和 TF 共用约 120 秒就绪期限，Nav2 action server 另
 ### 待测-10：当前 HEAD 的 ROS 构建与五个 competition CTest
 
 - 风险：`高`；关联：BT-007、BT-011、BT-013、BT-015、BT-016；状态：`待测试`。
-- 测试：在具备 ROS 2 和完整依赖的隔离 Linux 工作空间，记录代码 HEAD、`ROS_DISTRO` 与 `behaviortree_cpp` 版本；运行 `colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON`、`colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_(conditions|combat|retreat|recover|phase1)$' --output-on-failure`、`colcon test-result --verbose`，保存退出码和关键日志。
+- 测试：在具备 ROS 2 和完整依赖的隔离 Linux 工作空间，记录代码 HEAD、`ROS_DISTRO` 与 `behaviortree_cpp` 版本；运行 `colcon build --packages-select pb2025_sentry_behavior --cmake-args -DBUILD_TESTING=ON`、`colcon test --packages-select pb2025_sentry_behavior --ctest-args -R '^competition_(conditions|combat|retreat|recover|main)$' --output-on-failure`、`colcon test-result --verbose`，保存退出码和关键日志。
 - 判据：本 HEAD 构建成功，五个 CTest 全部通过；CTest 中的记录型发布/导航桩不能充当真实 ROS 接口证据。条件调试 XML 的独立覆盖缺口仍由 BT-014 跟踪。
 - 结果：未运行，无构建或 CTest 退出码。2026-09-27 在 macOS 上，`colcon --version`、`ros2 --version`、`cmake --version` 均退出 127，提示 `command not found`；ROS/BT.CPP 运行版本不可取得。HEAD 为 `50ad0e4757a3d475799451521b03ab6f474e181d`。四份正式 XML 可解析，五个 CTest 已注册，但这仅是静态检查；旧 `sentry_ws/install/setup.bash` 指向本机不存在的 `/opt/ros/humble`，不能复用为本 HEAD 的验证结果。
 
 ### 待测-11：真实 PoseStamped 目标的转换与 Nav2 接收
 
 - 风险：`中`；关联：BT-015；状态：`待测试`。
-- 测试：在独立 `ROS_DOMAIN_ID` 使用正式 `competition_phase1` 和真实 `SendNav2Goal` 插件，配合假 Nav2 action server 记录收到的 `PoseStamped`；核对正式前进/撤退目标的 x、y、`frame_id=map`、时间戳和零 yaw 四元数。另用隔离测试输入让同一真实插件转换一次非零 yaw。
+- 测试：在独立 `ROS_DOMAIN_ID` 使用正式 `competition_main` 和真实 `SendNav2Goal` 插件，配合假 Nav2 action server 记录收到的 `PoseStamped`；核对正式前进/撤退目标的 x、y、`frame_id=map`、时间戳和零 yaw 四元数。另用隔离测试输入让同一真实插件转换一次非零 yaw。
 - 判据：正式目标数值和坐标系正确，真实 Nav2 action 接收成功；非零 yaw 另行证明转换代码。字符串目标桩或单独调试树的通过结果不能替代正式树接口验证。
 - 结果：未运行；当前机器没有 ROS 2 或可用假 Nav2 服务端，现有 CTest 只记录目标字符串。
 
 ### 待测-12：正式树控制话题类型、重映射与心跳
 
 - 风险：`高`；关联：BT-011、BT-013、BT-015、BT-016；状态：`待测试`。
-- 测试：在独立 `ROS_DOMAIN_ID` 启动正式 `competition_phase1`，使用模拟裁判输入、假 Nav2 和实际 ROS 发布插件；用 `ros2 topic type`、`echo`、`hz` 记录 `/cmd_vel_nav2_result`、`/cmd_spin`、`/gimbal_scan_cmd`、`/auto_aim_switch` 的类型、值、重映射及阶段运行/结束时序。
+- 测试：在独立 `ROS_DOMAIN_ID` 启动正式 `competition_main`，使用模拟裁判输入、假 Nav2 和实际 ROS 发布插件；用 `ros2 topic type`、`echo`、`hz` 记录 `/cmd_vel_nav2_result`、`/cmd_spin`、`/gimbal_scan_cmd`、`/auto_aim_switch` 的类型、值、重映射及阶段运行/结束时序。
 - 判据：四种类型符合 `test/README.md`；XML 的 `cmd_vel` 实际到达 `/cmd_vel_nav2_result`；云台、自瞄、spin 稳定心跳间隔小于 0.5 秒，比赛结束可观察四项零输出。独立调试树结果不替代正式树结果。
 - 结果：未运行；`ros2 --version` 退出 127，没有 ROS topic 观测数据。不得在实车控制域发布模拟裁判或控制消息。
 
