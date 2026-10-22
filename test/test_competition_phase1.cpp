@@ -168,9 +168,11 @@ int main(int argc, char ** argv)
       };
     // 每条字符串对应一次多点请求；比较整串同时检查点数与顺序。
     const std::string forward =
-      "-0.45;-0.63;0.0|5.44;-1.68;0.0|7.13;0.10;0.0|4.85;3.74;0.0|0.55;5.18;0.0";
+      "-16.3622;8.9870;2.8198|-21.7160;10.5510;3.0500|-26.7891;11.3130;-1.7359|"
+      "-27.0898;7.7037;-0.3465|-23.4204;6.9017;1.2294|-16.6229;9.1474;-0.2643";
     const std::string retreat =
-      "0.55;5.18;0.0|4.85;3.74;0.0|7.13;0.10;0.0|5.44;-1.68;0.0|-0.45;-0.63;0.0";
+      "-16.6229;9.1474;-0.2643|-23.4204;6.9017;1.2294|-27.0898;7.7037;-0.3465|"
+      "-26.7891;11.3130;-1.7359|-21.7160;10.5510;3.0500|-16.3622;8.9870;2.8198";
     const std::vector<std::string> round_route = {forward, retreat};
     auto check_stop = [&] {
         require(last("auto_aim_switch") == 0 && last("cmd_spin") == 0 &&
@@ -180,18 +182,50 @@ int main(int argc, char ** argv)
     reset();
     set_game(0);
     set_hp(400);
-    map_failures = tf_failures = nav2_failures = 1;
+    map_failures = nav2_failures = 1;
+    tf_failures = 20;
     auto init_tree = factory.createTree("competition_phase1", local);
+    require(init_tree.tickExactlyOnce() == BT::NodeStatus::RUNNING,
+      "INIT waits for the map");
+    require(outputs.size() == 4 && last("cmd_vel") == 0 && last("cmd_spin") == 0 &&
+      last("gimbal_scan_cmd") == 0.5 && last("auto_aim_switch") == 0,
+      "Map reception also refreshes zero chassis velocity and gimbal scanning");
+    std::this_thread::sleep_for(std::chrono::milliseconds(600));
     for (int i = 0; i < 3; ++i) {
+      outputs.clear();
       require(init_tree.tickExactlyOnce() == BT::NodeStatus::RUNNING,
-        "INIT remains RUNNING while a readiness gate fails");
-      require(outputs.empty(), "INIT failure must not trigger root safe stop or WAIT_GAME");
-      std::this_thread::sleep_for(std::chrono::milliseconds(600));
+        "INIT scans continuously while localization is pending");
+      require(outputs.size() == 4 && last("gimbal_scan_cmd") == 0.5 &&
+        last("cmd_spin") == 0 && last("cmd_vel") == 0 && last("auto_aim_switch") == 0,
+        "Each initialization tick scans with chassis stopped and aim disabled");
+      require(TestNav::goals.empty(), "Localization wait keeps navigation requests pending");
     }
+    tf_failures = 0;
+    outputs.clear();
+    require(init_tree.tickExactlyOnce() == BT::NodeStatus::RUNNING &&
+      outputs.size() == 4 && TestNav::goals.empty(), "Scan continues while Nav2 starts");
     require(init_tree.tickExactlyOnce() == BT::NodeStatus::RUNNING,
       "INIT proceeds to WAIT_GAME after all gates become ready");
     require(map_failures == 0 && tf_failures == 0 && nav2_failures == 0 &&
       !outputs.empty() && TestNav::goals.empty(), "All readiness gates must be polled");
+
+    reset();
+    set_game(4);
+    tf_failures = 3;
+    TestNav::hold = true;
+    auto early_game = factory.createTree("competition_phase1", local);
+    require(early_game.tickExactlyOnce() == BT::NodeStatus::RUNNING &&
+      TestNav::goals.empty() && last("cmd_spin") == 0 && last("gimbal_scan_cmd") == 0.5,
+      "Game start during initialization keeps scanning with zero chassis output");
+    tf_failures = 0;
+    require(early_game.tickExactlyOnce() == BT::NodeStatus::RUNNING &&
+      TestNav::goals == std::vector<std::string>({forward}), "Ready localization starts the original route");
+    outputs.clear();
+    require(early_game.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Forward route remains active");
+    for (const auto & output : outputs) {
+      require(output.topic != "gimbal_scan_cmd", "Moving forward releases periodic scanning");
+    }
+    early_game.haltTree();
 
     reset();
     set_game(0);
@@ -199,9 +233,13 @@ int main(int argc, char ** argv)
     auto tree = factory.createTree("competition_phase1", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Wait for game");
     require(TestNav::goals.empty(), "No goal before game");
-    const auto waiting_stops = outputs.size();
-    require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Wait remains RUNNING");
-    require(outputs.size() == waiting_stops + 3, "Wait heartbeats without repeated Twist");
+    for (int i = 0; i < 8; ++i) {
+      outputs.clear();
+      require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Wait remains RUNNING");
+      require(outputs.size() == 4 && last("cmd_vel") == 0 && last("cmd_spin") == 0 &&
+        last("gimbal_scan_cmd") == 0.5 && last("auto_aim_switch") == 0,
+        "Every waiting tick refreshes zero chassis velocity until game start");
+    }
     set_game(4);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Reached combat");
     require(TestNav::goals == std::vector<std::string>({forward}), "Forward waypoints, including 65535 game time");
@@ -246,6 +284,7 @@ int main(int argc, char ** argv)
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Continuous route heartbeat");
     for (const auto & output : outputs) {
       require(output.topic != "cmd_vel", "No intermediate stop while following route");
+      require(output.topic != "gimbal_scan_cmd", "Navigation uses movement-direction following");
     }
     set_hp(150);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING &&

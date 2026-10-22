@@ -25,26 +25,35 @@
 
   <!-- =====================================================================
        子树：phase1_init (系统就绪检查)
-       逻辑：按序阻塞确认地图、底盘坐标变换、Nav2 导航栈可用。
-             任一节点失败将导致该子树失败，由外层触发重试循环。
+       逻辑：等待地图、定位与 Nav2 就绪期间持续扫描云台。
+             初始化期间保持底盘零速与自瞄关闭。
   ===================================================================== -->
   <BehaviorTree ID="phase1_init">
-    <Sequence>
-      <!-- 检查 1: 地图话题接收并等待 5 秒以确保建图/载入稳定 -->
-      <IsMapReady topic_name="/map"
-                  settle_time="5.0"
-                  timeout="120.0"/>
-
-      <!-- 检查 2: 确认定位系统工作正常 (map -> base_footprint TF 连通) -->
-      <IsTfReady map_frame="map"
-                 base_frame="base_footprint"
-                 timeout="120.0"/>
-
-      <!-- 检查 3: 确认 Nav2 核心 Action 动作服务器已上线 -->
-      <IsNav2Ready action_name="navigate_through_poses"
-                   through_poses="true"
-                   timeout="30.0"/>
-    </Sequence>
+    <ReactiveFallback>
+      <Sequence>
+        <IsMapReady topic_name="/map"
+                    settle_time="5.0"
+                    timeout="120.0"/>
+        <IsTfReady map_frame="map"
+                   base_frame="base_footprint"
+                   timeout="120.0"/>
+        <IsNav2Ready action_name="navigate_through_poses"
+                     through_poses="true"
+                     timeout="30.0"/>
+      </Sequence>
+      <!-- 每次 tick 刷新扫描和零速；定位就绪后由后续阶段接管。 -->
+      <KeepRunningUntilFailure>
+        <Sequence>
+          <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
+          <PublishSpinSpeed spin_speed="0" duration="0" topic_name="cmd_spin"/>
+          <PublishTwist v_x="0" v_y="0" v_yaw="0" duration="0" topic_name="cmd_vel"/>
+          <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
+                                 yaw_min="-3.14159" yaw_max="3.14159"
+                                 pitch_min="-0.3" pitch_max="0.3"
+                                 duration="0" topic_name="gimbal_scan_cmd"/>
+        </Sequence>
+      </KeepRunningUntilFailure>
+    </ReactiveFallback>
   </BehaviorTree>
 
 
@@ -104,6 +113,9 @@
             <PublishSpinSpeed spin_speed="0"
                               duration="0"
                               topic_name="cmd_spin"/>
+            <!-- 持续刷新导航零速，覆盖遥控导航档附带的底盘自转。 -->
+            <PublishTwist v_x="0" v_y="0" v_yaw="0"
+                          duration="0" topic_name="cmd_vel"/>
           </Sequence>
         </KeepRunningUntilFailure>
       </ReactiveFallback>
@@ -118,7 +130,7 @@
 
   <!-- =====================================================================
        子树：phase1_navigate_forward (前进巡航路线执行)
-       逻辑：一次提交五点连续路线，运行期间每次 tick 检查 HP。
+       逻辑：一次提交六点连续路线，运行期间每次 tick 检查 HP。
              整路线超时 (300s) 或 HP <= 150 时返回 FAILURE，交给外层处理。
   ===================================================================== -->
   <BehaviorTree ID="phase1_navigate_forward">
@@ -128,7 +140,7 @@
       <!-- 300000ms 是整路线执行上限；中间点由 Nav2 连续通过。 -->
       <Timeout msec="300000">
         <SendNav2ThroughPoses
-          goals="-0.45;-0.63;0.0|5.44;-1.68;0.0|7.13;0.10;0.0|4.85;3.74;0.0|0.55;5.18;0.0"
+          goals="-16.3622;8.9870;2.8198|-21.7160;10.5510;3.0500|-26.7891;11.3130;-1.7359|-27.0898;7.7037;-0.3465|-23.4204;6.9017;1.2294|-16.6229;9.1474;-0.2643"
           action_name="navigate_through_poses"/>
       </Timeout>
     </ReactiveSequence>
@@ -138,7 +150,8 @@
   <!-- =====================================================================
        子树：phase1_navigate (前进阶段顶层状态机)
        逻辑：
-       - 并发执行：一边监听比赛状态并维持云台扫描，一边推进路径导航。
+       - 并发执行：一边监听比赛状态并维持行进状态，一边推进路径导航。
+       - 云台复用 Hub 的运动方向跟随。
        - 容错处理：导航失败时根据是残血 (low_hp) 还是路径受阻分别进行状态转移。
        - 产出结果：写入 @forward_outcome ("arrived" 或 "low_hp")。
   ===================================================================== -->
@@ -162,14 +175,7 @@
                         key_port="{@referee_gameStatus}"/>
           <KeepRunningUntilFailure>
             <Sequence>
-              <PublishGimbalVelocity gimbal_vel_yaw="0.5"
-                                     gimbal_vel_pitch="0"
-                                     yaw_min="-3.14159"
-                                     yaw_max="3.14159"
-                                     pitch_min="-0.3"
-                                     pitch_max="0.3"
-                                     duration="0"
-                                     topic_name="gimbal_scan_cmd"/>
+              <!-- 扫描指令到期后，Hub 按导航速度方向控制云台。 -->
               <PublishAutoAim value="0"
                               duration="0"
                               topic_name="auto_aim_switch"/>

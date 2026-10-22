@@ -43,6 +43,7 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp_action::Client<BTExecuteTree>::SharedPtr action_client_;
   std::string target_tree_;
+  bool goal_sent_{false};
 };
 
 }  // namespace behavior

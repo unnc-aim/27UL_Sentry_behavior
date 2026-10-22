@@ -35,13 +35,18 @@ SentryBehaviorClient::SentryBehaviorClient(const rclcpp::NodeOptions & options)
     return;
   }
 
-  timer_ = create_wall_timer(100ms, std::bind(&SentryBehaviorClient::sendGoal, this));
+  // Allow discovery of the response reader before the first action request.
+  timer_ = create_wall_timer(2s, std::bind(&SentryBehaviorClient::sendGoal, this));
 }
 
 void SentryBehaviorClient::sendGoal()
 {
   using namespace std::placeholders;
-  timer_->cancel();
+  if (goal_sent_) {
+    RCLCPP_WARN(get_logger(), "Waiting for Behavior Tree goal response; execution is unconfirmed");
+    return;
+  }
+  goal_sent_ = true;
 
   auto goal_msg = BTExecuteTree::Goal();
   goal_msg.target_tree = target_tree_;
@@ -49,6 +54,14 @@ void SentryBehaviorClient::sendGoal()
   RCLCPP_INFO(get_logger(), "Sending goal to execute Behavior Tree: %s", target_tree_.c_str());
 
   auto options = rclcpp_action::Client<BTExecuteTree>::SendGoalOptions();
+  options.goal_response_callback = [this](const GoalHandleBTExecuateTree::SharedPtr & handle) {
+      timer_->cancel();
+      if (handle) {
+        RCLCPP_INFO(get_logger(), "Behavior Tree startup request accepted: %s", target_tree_.c_str());
+      } else {
+        RCLCPP_ERROR(get_logger(), "Behavior Tree startup request rejected: %s", target_tree_.c_str());
+      }
+    };
   options.feedback_callback = std::bind(&SentryBehaviorClient::feedbackCallback, this, _1, _2);
   options.result_callback = std::bind(&SentryBehaviorClient::resultCallback, this, _1);
 

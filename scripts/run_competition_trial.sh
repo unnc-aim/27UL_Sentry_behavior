@@ -80,10 +80,16 @@ log "记录文件：$SENTRY_LOG"
 publish_referee game_status GameStatus '{game_type: 1, game_progress: 3, stage_remain_time: 420}'
 publish_referee robot_performance RobotPerformance '{robot_id: 7, current_hp: 400, maximum_hp: 400}'
 publish_referee robot_heat RobotHeat '{shooter_17mm_barrel_heat: 0}'
+log "等待 Nav2 完成激活；初始化扫描期间保持准备阶段。"
+while [[ "$(timeout --signal=INT --kill-after=2s 15s \
+  ros2 lifecycle get /bt_navigator --no-daemon --spin-time 5 2>>"$SENTRY_LOG")" != active* ]]; do
+  log "Nav2 激活状态尚待确认，重新查询。"
+  sleep 0.2
+done
 wait_for "等待正式树完成初始化并进入开赛前状态" /cmd_spin example_interfaces/msg/Float32 'm.data == 0.0'
 
 publish_referee game_status GameStatus '{game_type: 1, game_progress: 4, stage_remain_time: 420}'
-wait_for "开赛；等待五点前进完成并进入战斗" /gimbal_scan_cmd pb_rm_interfaces/msg/GimbalCmd 'm.velocity.yaw == 1.0'
+wait_for "开赛；等待六点前进完成并进入战斗" /gimbal_scan_cmd pb_rm_interfaces/msg/GimbalCmd 'm.velocity.yaw == 1.0'
 wait_for "确认战斗自瞄开启" /auto_aim_switch std_msgs/msg/Int32 'm.data == 1'
 publish_referee robot_heat RobotHeat '{shooter_17mm_barrel_heat: 240}'
 wait_for "热量240；确认自瞄关闭" /auto_aim_switch std_msgs/msg/Int32 'm.data == 0'
@@ -93,7 +99,7 @@ wait_for "热量50；确认自瞄恢复" /auto_aim_switch std_msgs/msg/Int32 'm.
 publish_referee robot_performance RobotPerformance '{robot_id: 7, current_hp: 150, maximum_hp: 400}'
 # Float32 的2.2有表示误差，使用差值比较；退回到点后才会重新发布7。
 wait_for "HP150；确认进入撤退" /cmd_spin example_interfaces/msg/Float32 'abs(m.data - 2.2) < 0.05'
-wait_for "等待逆序五点撤退完成并进入恢复" /cmd_spin example_interfaces/msg/Float32 'm.data == 7.0'
+wait_for "等待逆序六点撤退完成并进入恢复" /cmd_spin example_interfaces/msg/Float32 'm.data == 7.0'
 publish_referee robot_performance RobotPerformance '{robot_id: 7, current_hp: 400, maximum_hp: 400}'
 wait_for "回满血；确认开始下一轮前进" /cmd_spin example_interfaces/msg/Float32 'abs(m.data - 2.2) < 0.05'
 wait_for "等待第二次前进完成并进入战斗" /gimbal_scan_cmd pb_rm_interfaces/msg/GimbalCmd 'm.velocity.yaw == 1.0'

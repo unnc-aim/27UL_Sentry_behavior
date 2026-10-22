@@ -122,6 +122,11 @@ endforeach()
 
 if(BUILD_TESTING)
   enable_testing()
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  add_test(NAME behavior_client_startup
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test/test_behavior_client_startup.py
+      $<TARGET_FILE:behavior_client>)
+  set_tests_properties(behavior_client_startup PROPERTIES TIMEOUT 45)
   ament_auto_add_executable(test_is_nav2_ready test/test_is_nav2_ready.cpp)
   target_link_libraries(test_is_nav2_ready is_nav2_ready)
   add_test(NAME nav2_ready_types COMMAND test_is_nav2_ready)

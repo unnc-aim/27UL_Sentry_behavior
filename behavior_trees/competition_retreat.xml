@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <BehaviorTree ID="competition_retreat_route">
-    <!-- 撤退一次提交逆序五点，终点停车沿用外层 PublishTwist。 -->
+    <!-- 撤退一次提交逆序六点，终点停车沿用外层 PublishTwist。 -->
     <Timeout msec="300000">
       <SendNav2ThroughPoses
-        goals="0.55;5.18;0.0|4.85;3.74;0.0|7.13;0.10;0.0|5.44;-1.68;0.0|-0.45;-0.63;0.0"
+        goals="-16.6229;9.1474;-0.2643|-23.4204;6.9017;1.2294|-27.0898;7.7037;-0.3465|-26.7891;11.3130;-1.7359|-21.7160;10.5510;3.0500|-16.3622;8.9870;2.8198"
         action_name="navigate_through_poses"/>
     </Timeout>
   </BehaviorTree>
@@ -30,25 +30,17 @@
     </RetryUntilSuccessful>
   </BehaviorTree>
 
-  <!-- 正式撤退持续发布 2.2rad/s；比赛状态由外层检查。 -->
+  <!-- 撤退保持底盘 2.2rad/s，云台复用运动方向跟随；比赛状态由外层检查。 -->
   <BehaviorTree ID="competition_retreat_active">
     <Sequence>
       <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
       <PublishSpinSpeed spin_speed="2.2" duration="0" topic_name="cmd_spin"/>
-      <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
-                             yaw_min="-3.14159" yaw_max="3.14159"
-                             pitch_min="-0.3" pitch_max="0.3"
-                             duration="0" topic_name="gimbal_scan_cmd"/>
       <Parallel success_count="1" failure_count="1">
         <SubTree ID="competition_retreat_navigation"/>
         <KeepRunningUntilFailure>
           <Sequence>
             <PublishAutoAim value="0" duration="0" topic_name="auto_aim_switch"/>
             <PublishSpinSpeed spin_speed="2.2" duration="0" topic_name="cmd_spin"/>
-            <PublishGimbalVelocity gimbal_vel_yaw="0.5" gimbal_vel_pitch="0"
-                                   yaw_min="-3.14159" yaw_max="3.14159"
-                                   pitch_min="-0.3" pitch_max="0.3"
-                                   duration="0" topic_name="gimbal_scan_cmd"/>
           </Sequence>
         </KeepRunningUntilFailure>
       </Parallel>

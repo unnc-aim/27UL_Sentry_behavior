@@ -155,7 +155,8 @@ int main(int argc, char ** argv)
         global->set("referee_robotPerformance", hp);
       };
     const std::string route =
-      "0.55;5.18;0.0|4.85;3.74;0.0|7.13;0.10;0.0|5.44;-1.68;0.0|-0.45;-0.63;0.0";
+      "-16.6229;9.1474;-0.2643|-23.4204;6.9017;1.2294|-27.0898;7.7037;-0.3465|"
+      "-26.7891;11.3130;-1.7359|-21.7160;10.5510;3.0500|-16.3622;8.9870;2.8198";
 
     clear();
     auto tree = factory.createTree("competition_retreat", local);
@@ -166,12 +167,12 @@ int main(int argc, char ** argv)
     set_game(4);
     set_hp(400);
     tree = factory.createTree("competition_retreat", local);
-    require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Five waypoints reach base");
+    require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Six waypoints reach base");
     require(TestNav::goals == std::vector<std::string>({route}), "One ordered retreat request");
     require(count("cmd_vel") == 1 && last("cmd_vel") == 0,
       "Only the completed route publishes a stop");
     require(last("auto_aim_switch") == 0 && last("cmd_spin") == 2.2 &&
-      last("gimbal_scan_cmd") == 0.5, "Retreat output values");
+      count("gimbal_scan_cmd") == 0, "Retreat preserves chassis spin and uses navigation gimbal following");
 
     clear();
     set_hp(0);
@@ -189,8 +190,8 @@ int main(int argc, char ** argv)
     outputs.clear();
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Backoff still running");
     require(TestNav::goals.size() == 1 && count("cmd_vel") == 0, "No goal storm or stop flood");
-    require(outputs.size() == 3 && last("auto_aim_switch") == 0 &&
-      last("cmd_spin") == 2.2 && last("gimbal_scan_cmd") == 0.5, "Heartbeats during backoff");
+    require(outputs.size() == 2 && last("auto_aim_switch") == 0 &&
+      last("cmd_spin") == 2.2 && count("gimbal_scan_cmd") == 0, "Heartbeats during backoff");
     std::this_thread::sleep_for(std::chrono::milliseconds(2050));
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Retry reaches base");
     require(TestNav::goals == std::vector<std::string>({
@@ -203,7 +204,7 @@ int main(int argc, char ** argv)
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Navigation in progress");
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Navigate heartbeat");
     require(count("cmd_vel") == 0 && count("auto_aim_switch") >= 3 &&
-      count("cmd_spin") >= 3 && count("gimbal_scan_cmd") >= 3, "Continuous outputs");
+      count("cmd_spin") >= 3 && count("gimbal_scan_cmd") == 0, "Continuous outputs release scan control");
     set_game(5);
     set_hp(0);
     require(tree.tickExactlyOnce() == BT::NodeStatus::FAILURE, "Game end wins over HP zero");
