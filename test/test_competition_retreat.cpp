@@ -155,8 +155,8 @@ int main(int argc, char ** argv)
         global->set("referee_robotPerformance", hp);
       };
     const std::string route =
-      "-16.6229;9.1474;-0.2643|-23.4204;6.9017;1.2294|-27.0898;7.7037;-0.3465|"
-      "-26.7891;11.3130;-1.7359|-21.7160;10.5510;3.0500|-16.3622;8.9870;2.8198";
+      "-5.0909;5.7260;-0.5942|-7.5188;2.4967;0.8262|-10.4416;4.5946;-0.7854|"
+      "-8.1552;8.0360;-2.2947|-4.8788;5.5139;2.5691|-0.0231;0.8467;0.0000";
 
     clear();
     auto tree = factory.createTree("competition_retreat", local);
@@ -171,7 +171,7 @@ int main(int argc, char ** argv)
     require(TestNav::goals == std::vector<std::string>({route}), "One ordered retreat request");
     require(count("cmd_vel") == 1 && last("cmd_vel") == 0,
       "Only the completed route publishes a stop");
-    require(last("auto_aim_switch") == 0 && last("cmd_spin") == 2.2 &&
+    require(last("auto_aim_switch") == 0 && last("cmd_spin") == 4.0 &&
       count("gimbal_scan_cmd") == 0, "Retreat preserves chassis spin and uses navigation gimbal following");
 
     clear();
@@ -191,7 +191,7 @@ int main(int argc, char ** argv)
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Backoff still running");
     require(TestNav::goals.size() == 1 && count("cmd_vel") == 0, "No goal storm or stop flood");
     require(outputs.size() == 2 && last("auto_aim_switch") == 0 &&
-      last("cmd_spin") == 2.2 && count("gimbal_scan_cmd") == 0, "Heartbeats during backoff");
+      last("cmd_spin") == 4.0 && count("gimbal_scan_cmd") == 0, "Heartbeats during backoff");
     std::this_thread::sleep_for(std::chrono::milliseconds(2050));
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Retry reaches base");
     require(TestNav::goals == std::vector<std::string>({

@@ -1,90 +1,37 @@
-车
+# Odin 原生三维地图的比赛流程
 
-测试指令：
+当前 `competition_phase1` 使用 `field_v2_20261024` 原生定位图和配套导航图，以及 2026-10-27 选取的六个点。前进依次经过第 1 至第 6 点，撤退按逆序返回，各点保留选点时的朝向。开赛、战斗、热量、血量、恢复和结束处理继续使用原比赛行为树。
 
-当前 `competition_phase1` 使用 Odin 地图 `odin_20261019_220142` 和 2026-10-20 选择的六个点。
-前进依次经过第 1 至第 6 点，撤退按逆序返回。各点保留选点时的朝向。
-开赛、战斗、热量、血量、恢复和结束处理沿用原比赛行为树。
+- 原生定位图：`~/sentry_ws/maps/field_v2_20261024/native.bin`。
+- 导航图：`~/sentry_ws/maps/field_v2_20261024/navigation_ground_continuous/navigation.yaml`。
+- 六点记录：`~/sentry_ws/maps/field_v2_20261024/waypoints.yaml`。
+- 建图与选点操作：[odin_3d_test/USAGE.md](../odin_integration/odin_3d_test/USAGE.md)。
 
-地图文件位于 `pb2025_nav_bringup/map/reality/odin_20261019_220142.yaml`，
-对应图像为同目录下的 `odin_20261019_220142.pgm`。
-原始选点记录为 `~/odin_ws/routes/odin_competition_20261020_201546.yaml`。
-
-云台在初始化阶段以 `0.5 rad/s` 持续扫描，帮助定位获取不同方向的观测。
-等待地图、定位、Nav2 以及开赛期间，行为树每次 tick 都给出底盘零速、
-小陀螺零速和自瞄关闭指令。`PublishTwist` 经启动文件转到 `/cmd_vel_nav2_result`，
-再由 `fake_vel_transform` 发布 `/cmd_vel`，持续刷新 Hub 的导航输入。
-单次零速在 Hub 的 `0.2 s` 有效期后会恢复遥控输入，导航档附带的自转也会随之恢复。
-前进、撤退阶段由 Hub 按导航速度方向控制云台，停车后保持朝向。
-上一阶段的扫描指令在最多 `0.5 s` 内到期后，Hub 切换到运动方向跟随。
-开赛前待机、战斗与恢复阶段继续使用各自的扫描设置，遥控接管与急停沿用 Hub 的现有处理。
-
-`universal_controller/config/controller_params.sentry.yaml` 中，跟随目标的最大角速度
-从 `1.0` 调至 `3.0 rad/s`，最大角加速度从 `2.0` 调至 `6.0 rad/s²`。
-普通导航与比赛行进共用这组参数，实际转向速度与 Odin 数据连续性需实车确认。
-首次加载本次调整时，结束已有导航和行为树，车辆保持急停，在终端执行：
-
-```bash
-sudo systemctl restart ros2-universal-controller.service
-```
-
-控制服务恢复后，按原遥控操作进入允许导航的状态、摇杆回中，再依次启动下面的终端 1、2。
-两个终端共同完成初始化；导航启动后及时启动行为树，让云台扫描参与重定位。
-行为树客户端在发现服务端后留出 `2 s` 供回复通道建立，再发送一次执行请求。
-终端出现 `Behavior Tree startup request accepted: competition_phase1` 表示服务端已接收请求。
-如果持续显示 `Waiting for Behavior Tree goal response`，保持车辆急停，检查本轮启动日志。
-恢复导航档前先确认 `/gimbal_scan_cmd` 与底盘零速正在持续发布。
+云台在初始化和开赛前以 `0.5 rad/s` 扫描，底盘保持零速。前进、撤退阶段由 Hub 按导航速度方向控制云台，停车后保持朝向。前进、撤退的小陀螺指令为 `4.0 rad/s`，战斗及恢复为 `7.0 rad/s`；遥控接管与急停沿用 Hub 的现有处理。
 
 1. 终端1跑导航：
 
 ```bash
-cd "$HOME/sentry_ws"
 source /opt/ros/humble/setup.bash
-source install/setup.bash
-source "$HOME/odin_ws/install/local_setup.bash"
-export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0 TZ=Asia/Shanghai
+source "$HOME/sentry_ws/install/setup.bash"
+export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0 OPENBLAS_NUM_THREADS=1 TZ=Asia/Shanghai
+ODIN_MAP_DIR="$HOME/sentry_ws/maps/field_v2_20261024"
 
-mkdir -p log/behavior_spin_detail
-SENTRY_N="$PWD/log/behavior_spin_detail/N_$(date +%Y%m%d_%H%M%S)"
-
-script -q -f -e \
-  --log-out "$SENTRY_N.log" \
-  --log-timing "$SENTRY_N.time" \
-  --command 'ros2 launch odin_sentry_bringup odin_sentry.launch.py \
-    mode:=navigation \
-    use_robot_state_pub:=True \
-    use_rviz:=True \
-    map:="$(ros2 pkg prefix --share pb2025_nav_bringup)/map/reality/odin_20261019_220142.yaml" \
-    params_file:="$HOME/sentry_ws/log/behavior_speed_test/nav2_3p0_no_spin.yaml" \
-    linear_speed_limit:=3.0 \
-    angular_speed_limit:=3.0'
+env -u PYTHONNOUSERSITE ros2 launch odin_3d_test odin_3d.launch.py \
+  mode:=navigation \
+  native_map:="$ODIN_MAP_DIR/native.bin" \
+  map:="$ODIN_MAP_DIR/navigation_ground_continuous/navigation.yaml"
 ```
 
-此入口启动已完成的 Odin 双路感知与 AMCL 全局初始化，并沿用 2026-10-03
-完整比赛流程测试的 `nav2_3p0_no_spin.yaml`。控制器线速度上限为 `2.5 m/s`，
-速度平滑器的 X/Y 上限为 `3.0 m/s`，Nav2 角速度范围为 `[-3.0, 3.0] rad/s`。
-启动参数的两个 `3.0` 保留上述原始设置；控制器最终仍使用配置文件中的 `2.5 m/s`。
-Odin 入口的到点条件为位置误差 `0.1 m` 内且平移速度不高于 `0.1 m/s`，
-当前比赛配置的近终点减速距离为 `2.4 m`。末段停车与修正独立于最高速度设置。
-行为树经 `/cmd_spin` 给出的行进 `2.2 rad/s`、战斗及恢复 `7.0 rad/s` 沿用原值；
-这部分旋转由后级合成，需按原比赛操作流程管理。
-启动后等待地图、当前扫描、局部 TF 和 AMCL 工作状态就绪，
-随后用已收到的近期扫描自动搜索整张地图的位置与朝向，经过三帧新扫描复核后，
-向 AMCL 提供初始位姿，并在剩余总时间内继续观察。Odin 默认参数为 `localization_method:=scan_match`。
-这段观察与 Nav2 激活并行进行，比赛树按原有地图、TF、导航服务与裁判状态推进。
-全局搜索与候选复核都合并最近 `10 s` 的二维扫描，按各帧测量时刻的车体位姿对齐。
-候选复核还检查最新单帧的匹配质量，连续三帧通过后才提交初始位姿。
-AMCL 继续使用当前扫描。
-初始化期间的自动云台扫描持续提供新视角，raw 实时障碍按 `0.2 s` 保留。
-导航开始输出日志后即可启动终端 2。输入等待、搜索和三帧复核共用 `60 s` 总预算，
-每轮候选复核最多 `20 s`，同时受剩余总时间限制。到时仍未通过则退出并报告超时。
-`--startup-timeout`、`--search-timeout` 和 `--verification-timeout` 可以缩短各阶段等待时间，
-重定位总预算上限保持 `60 s`，后续定位观察也使用剩余时间。
-若终端显示初始化已超时，重新启动导航和行为树这一组入口。
+这条命令同时启动原生全局定位、点云处理与 Nav2。默认导航上限为 `4.0 m/s`，控制器和平滑器共用该上限；平移加速度和减速度均为 `2.5 m/s²`，弯道横向加速度上限为 `2.5 m/s²`。控制器继续根据剩余路径、前方曲率与障碍距离减速，末段速度为 `0.15 m/s`，进入 10 cm 目标范围后停车。4 m/s 对应的提前减速距离为约 4.5 m。 目标接近速度按剩余路径计算可停车速度上限；短目标仍可正常加速，4.5 m 用作全速停车预算。
 
-对应历史记录为 `log/behavior_spin_detail/params_20261003_145642.log` 和
-`C_20261003_145642.log`：使用实车与模拟裁判输入，完成前进、战斗、撤退、
-恢复、再次前进和结束。现场速度还受路径、障碍物、加减速及底盘功率限制影响。
+中间航点进入 0.35 m 范围后从待经过列表移除。前视时间为 0.6 s，最大前视距离为 1 m；平移比例增益为 4.0、微分增益为 0.0，目标点和障碍物的距离制动继续生效。
+
+raw 处理范围为 10 m，近点密度过滤范围保持 4 m；地形窗口为 18×18 m，分辨率 5 cm，更新设置为 10 Hz。局部代价地图至少 10×10 m，前方检查范围约 4.9 m。
+
+摇杆最大输出只作用于手动输入。导航分支直接使用 `/cmd_vel`；底盘继续受 1200 rpm 轮速上限和功率分配影响。高平移与高速旋转同时请求时，底盘可能按轮速比例缩放实际输出。`4 m/s` 与行进时的 `4 rad/s` 表示指令上限及目标值，实车表现按轮速和运动记录核对。
+
+启动时保持车辆静止。行为树等待地图、TF、Nav2 和裁判状态期间持续扫描云台。原生定位状态见 `/odin_3d/state`、`/odin_3d/ready`；开赛前核对 `READY` 和 RViz 中车辆位置、朝向。
 
 2. 终端2跑行为树：
 
@@ -119,6 +66,8 @@ script -q -f -e \
 export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0
 bash "$HOME/sentry_ws/src/behavior/scripts/run_competition_trial_recorded.sh"
 ```
+
+脚本通过新导航请求确认前进与撤退，通过恢复阶段的 0.5 rad/s 云台扫描确认到达；行进旋转为 4 rad/s，战斗和恢复旋转为 7 rad/s。
 
 脚本会加载 ROS 和 `sentry_ws` 环境。运行前完成终端 1 的定位核对，并启动终端 2 的
 `competition_phase1`。本轮模拟测试的裁判话题使用模拟程序这一组发布者。

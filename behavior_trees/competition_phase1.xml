@@ -140,7 +140,7 @@
       <!-- 300000ms 是整路线执行上限；中间点由 Nav2 连续通过。 -->
       <Timeout msec="300000">
         <SendNav2ThroughPoses
-          goals="-16.3622;8.9870;2.8198|-21.7160;10.5510;3.0500|-26.7891;11.3130;-1.7359|-27.0898;7.7037;-0.3465|-23.4204;6.9017;1.2294|-16.6229;9.1474;-0.2643"
+          goals="-0.0231;0.8467;0.0000|-4.8788;5.5139;2.5691|-8.1552;8.0360;-2.2947|-10.4416;4.5946;-0.7854|-7.5188;2.4967;0.8262|-5.0909;5.7260;-0.5942"
           action_name="navigate_through_poses"/>
       </Timeout>
     </ReactiveSequence>
@@ -180,7 +180,7 @@
                               duration="0"
                               topic_name="auto_aim_switch"/>
               <!-- 行进旋转由 fake_vel_transform 与导航平移合成。 -->
-              <PublishSpinSpeed spin_speed="2.2"
+              <PublishSpinSpeed spin_speed="4.0"
                                 duration="0"
                                 topic_name="cmd_spin"/>
             </Sequence>

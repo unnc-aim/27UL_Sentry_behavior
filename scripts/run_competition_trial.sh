@@ -75,6 +75,14 @@ wait_for()
   log "$SENTRY_LAST_MESSAGE"
 }
 
+wait_for_route_start()
+{
+  local label="$1" since="$2"
+  wait_for "$label" /navigate_through_poses/_action/status action_msgs/msg/GoalStatusArray \
+    "any(s.status in (1, 2) and s.goal_info.stamp.sec + s.goal_info.stamp.nanosec * 1e-9 >= $since for s in m.status_list)" \
+    --qos-durability transient_local --qos-reliability reliable
+}
+
 log "流程：开赛、前进、热量停用与恢复、撤退、回满血、再次前进、结束。"
 log "记录文件：$SENTRY_LOG"
 publish_referee game_status GameStatus '{game_type: 1, game_progress: 3, stage_remain_time: 420}'
@@ -96,12 +104,14 @@ wait_for "热量240；确认自瞄关闭" /auto_aim_switch std_msgs/msg/Int32 'm
 publish_referee robot_heat RobotHeat '{shooter_17mm_barrel_heat: 50}'
 wait_for "热量50；确认自瞄恢复" /auto_aim_switch std_msgs/msg/Int32 'm.data == 1'
 
+SENTRY_ROUTE_AFTER="$(date +%s.%N)"
 publish_referee robot_performance RobotPerformance '{robot_id: 7, current_hp: 150, maximum_hp: 400}'
-# Float32 的2.2有表示误差，使用差值比较；退回到点后才会重新发布7。
-wait_for "HP150；确认进入撤退" /cmd_spin example_interfaces/msg/Float32 'abs(m.data - 2.2) < 0.05'
-wait_for "等待逆序六点撤退完成并进入恢复" /cmd_spin example_interfaces/msg/Float32 'm.data == 7.0'
+# 行进使用 4 rad/s，恢复使用 7 rad/s；用新导航请求及恢复扫描区分阶段。
+wait_for_route_start "HP150；确认进入撤退" "$SENTRY_ROUTE_AFTER"
+wait_for "等待逆序六点撤退完成并进入恢复" /gimbal_scan_cmd pb_rm_interfaces/msg/GimbalCmd 'm.velocity.yaw == 0.5'
+SENTRY_ROUTE_AFTER="$(date +%s.%N)"
 publish_referee robot_performance RobotPerformance '{robot_id: 7, current_hp: 400, maximum_hp: 400}'
-wait_for "回满血；确认开始下一轮前进" /cmd_spin example_interfaces/msg/Float32 'abs(m.data - 2.2) < 0.05'
+wait_for_route_start "回满血；确认开始下一轮前进" "$SENTRY_ROUTE_AFTER"
 wait_for "等待第二次前进完成并进入战斗" /gimbal_scan_cmd pb_rm_interfaces/msg/GimbalCmd 'm.velocity.yaw == 1.0'
 
 publish_referee game_status GameStatus '{game_type: 1, game_progress: 5, stage_remain_time: 0}'

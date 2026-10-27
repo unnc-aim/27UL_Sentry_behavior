@@ -168,11 +168,11 @@ int main(int argc, char ** argv)
       };
     // 每条字符串对应一次多点请求；比较整串同时检查点数与顺序。
     const std::string forward =
-      "-16.3622;8.9870;2.8198|-21.7160;10.5510;3.0500|-26.7891;11.3130;-1.7359|"
-      "-27.0898;7.7037;-0.3465|-23.4204;6.9017;1.2294|-16.6229;9.1474;-0.2643";
+      "-0.0231;0.8467;0.0000|-4.8788;5.5139;2.5691|-8.1552;8.0360;-2.2947|"
+      "-10.4416;4.5946;-0.7854|-7.5188;2.4967;0.8262|-5.0909;5.7260;-0.5942";
     const std::string retreat =
-      "-16.6229;9.1474;-0.2643|-23.4204;6.9017;1.2294|-27.0898;7.7037;-0.3465|"
-      "-26.7891;11.3130;-1.7359|-21.7160;10.5510;3.0500|-16.3622;8.9870;2.8198";
+      "-5.0909;5.7260;-0.5942|-7.5188;2.4967;0.8262|-10.4416;4.5946;-0.7854|"
+      "-8.1552;8.0360;-2.2947|-4.8788;5.5139;2.5691|-0.0231;0.8467;0.0000";
     const std::vector<std::string> round_route = {forward, retreat};
     auto check_stop = [&] {
         require(last("auto_aim_switch") == 0 && last("cmd_spin") == 0 &&
@@ -279,7 +279,7 @@ int main(int argc, char ** argv)
     TestNav::hold = true;
     tree = factory.createTree("competition_phase1", local);
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "First route active");
-    require(last("cmd_spin") == 2.2, "Forward spin speed");
+    require(last("cmd_spin") == 4.0, "Forward spin speed");
     outputs.clear();
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Continuous route heartbeat");
     for (const auto & output : outputs) {
@@ -290,11 +290,12 @@ int main(int argc, char ** argv)
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING &&
       TestNav::goals == round_route && TestNav::halts == 1,
       "Low HP halts forward route and starts retreat");
-    require(last("cmd_spin") == 2.2 && last("auto_aim_switch") == 0,
+    require(last("cmd_spin") == 4.0 && last("auto_aim_switch") == 0,
       "Retreat spins while skipping combat");
     TestNav::hold = false;
     require(tree.tickExactlyOnce() == BT::NodeStatus::RUNNING, "Retreat completes into recovery");
     require(TestNav::goals == round_route, "Each route is submitted once");
+    require(last("cmd_spin") == 7.0, "Recovery retains 7 rad/s spin");
     set_game(5);
     require(tree.tickExactlyOnce() == BT::NodeStatus::SUCCESS, "Low HP exit stops");
 
